@@ -94,7 +94,6 @@ public static class BoardEvaluator
         // 필요하면 계속 추가
     };
 
-    // ── 기존 API 유지 ─────────────────────────
     public static int Evaluate(int[,] board, int aiPlayer, float defenseWeight = 1.5f)
     {
         int human = aiPlayer == 1 ? 2 : 1;
@@ -110,66 +109,100 @@ public static class BoardEvaluator
         int score = 0;
         int n = board.GetLength(0);
 
-        for (int r = 0; r < n; r++)
-            for (int c = 0; c < n; c++)
-            {
-                if (board[r, c] != player) continue;
+        foreach (var line in GetAllLines(board, player, n))
+        {
+            // player 돌이 있는 라인만 평가
+            if (!line.Contains('1')) continue;
 
-                foreach (var (dr, dc) in Dirs)
-                {
-                    if (!IsStart(board, r, c, dr, dc, player, n))
-                        continue;
-
-                    string line = GetLine(board, r, c, dr, dc, player, n);
-                    score += EvaluateLine(line);
-                }
-            }
+            score += EvaluateFullLine(line);
+        }
 
         return score;
     }
 
-    private static string GetLine(int[,] board, int r, int c, int dr, int dc, int player, int n)
+    private static List<string> GetAllLines(int[,] board, int player, int n)
+    {
+        List<string> lines = new();
+
+        // =========================
+        // 가로 →
+        // =========================
+        for (int r = 0; r < n; r++)
+        {
+            lines.Add(GetFullLine(board, r, 0, 0, 1, player, n));
+        }
+
+        // =========================
+        // 세로 ↓
+        // =========================
+        for (int c = 0; c < n; c++)
+        {
+            lines.Add(GetFullLine(board, 0, c, 1, 0, player, n));
+        }
+
+        // =========================
+        // 대각선 ↘
+        // =========================
+        for (int r = 0; r < n - 4; r++)
+        {
+            lines.Add(GetFullLine(board, r, 0, 1, 1, player, n));
+        }
+        for (int c = 1; c < n - 4; c++)
+        {
+            lines.Add(GetFullLine(board, 0, c, 1, 1, player, n));
+        }
+
+        // =========================
+        // 대각선 ↗
+        // =========================
+        for (int r = 4; r < n; r++)
+        {
+            lines.Add(GetFullLine(board, r, 0, -1, 1, player, n));
+        }
+        for (int c = 1; c < n - 4; c++)
+        {
+            lines.Add(GetFullLine(board, n - 1, c, -1, 1, player, n));
+        }
+
+        return lines;
+    }
+
+    private static string GetFullLine(int[,] board, int r, int c, int dr, int dc, int player, int n)
     {
         StringBuilder sb = new();
 
-        // 🔥 중심 기준 -4 ~ +4 (총 9칸)
-        for (int i = -4; i <= 4; i++)
+        sb.Append('3');
+        while (r >= 0 && r < n && c >= 0 && c < n)
         {
-            int nr = r + dr * i;
-            int nc = c + dc * i;
 
-            if (nr < 0 || nr >= n || nc < 0 || nc >= n)
-                sb.Append('3'); // 벽
-            else if (board[nr, nc] == 0)
-                sb.Append('0'); // 빈칸
-            else if (board[nr, nc] == player)
-                sb.Append('1'); // 내 돌
-            else
-                sb.Append('2'); // 상대 돌
+            if (board[r, c] == 0) sb.Append('0');
+            else if (board[r, c] == player) sb.Append('1');
+            else sb.Append('2');
+
+            r += dr;
+            c += dc;
         }
-
+        sb.Append('3');
         return sb.ToString();
     }
 
-    private static int EvaluateLine(string line)
+    private static int EvaluateFullLine(string line)
     {
         int score = 0;
+
         foreach (var kv in patterns.OrderByDescending(p => p.Value))
         {
-            if (line.Contains(kv.Key))
+            int index = 0;
+
+            while ((index = line.IndexOf(kv.Key, index)) != -1)
+            {
                 score += kv.Value;
+
+                // 겹치는 영역 스킵
+                index += kv.Key.Length;
+            }
         }
+
         return score;
-    }
-
-    private static bool IsStart(int[,] board, int r, int c, int dr, int dc, int player, int n)
-    {
-        int pr = r - dr;
-        int pc = c - dc;
-
-        if (pr < 0 || pr >= n || pc < 0 || pc >= n)
-            return true;
-
-        return board[pr, pc] != player;
     }
 }
