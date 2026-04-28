@@ -31,7 +31,7 @@ public class CameraController : MonoBehaviour
     {
         transform.position = _defaultPosition;
         transform.eulerAngles = _defaultRotation;
-        _cam.fieldOfView = 50f;
+        _cam.fieldOfView = 20f;
     }
 
     private void Update()
