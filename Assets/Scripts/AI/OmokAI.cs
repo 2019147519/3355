@@ -144,7 +144,7 @@ public class OmokAI
                 board[r, c] = 0;
                 result = Math.Max(result, score);
                 alpha = Math.Max(alpha, result);
-                if (beta <= alpha) break;
+                if (beta <= alpha) break;   // α–β pruning
             }
         }
         else
@@ -165,7 +165,7 @@ public class OmokAI
                 board[r, c] = 0;
                 result = Math.Min(result, score);
                 beta = Math.Min(beta, result);
-                if (beta <= alpha) break;
+                if (beta <= alpha) break;   // α–β pruning
             }
         }
 
