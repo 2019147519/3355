@@ -5,16 +5,14 @@ using System.Text;
 
 public static class BoardEvaluator
 {
-    private static readonly (int dr, int dc)[] Dirs =
-        { (0,1),(1,0),(1,1),(1,-1) };
+    private static readonly (int dr, int dc)[] Dirs = { (0, 1), (1, 0), (1, 1), (1, -1) };
 
 
     private static readonly Dictionary<string, int> patterns = new()
     {
         // 0 = 빈칸
         // 1 = 내 돌
-        // 2 = 상대 돌
-        // 3 = 벽
+        // 2 = 상대 돌 혹은 벽으로 막힌 곳
         
         // =========================
         // 5목 (무조건 승리)
@@ -31,8 +29,6 @@ public static class BoardEvaluator
         // =========================
         { "211110", 20_000 },
         { "011112", 20_000 },
-        { "311110", 15_000 }, // 벽
-        { "011113", 15_000 },
 
         // =========================
         // 확장 열린 4 (한 칸 띄운 형태)
@@ -54,8 +50,7 @@ public static class BoardEvaluator
         // =========================
         { "211100", 1500 },
         { "001112", 1500 },
-        { "311100", 1000 }, // 벽
-        { "001113", 1000 },
+
 
         { "210110", 1500 },
         { "011012", 1500 },
@@ -72,8 +67,7 @@ public static class BoardEvaluator
         // =========================
         { "211000", 100 },
         { "000112", 100 },
-        { "311000", 80 },
-        { "000113", 80 },
+
 
         // =========================
         // 약한 연결 (1~2개 기반)
@@ -82,14 +76,6 @@ public static class BoardEvaluator
         { "0010", 20 },
         { "0100", 20 },
 
-        // =========================
-        // 벽 근처 패널티성 패턴
-        // =========================
-        { "31110", 300 },   // 벽 때문에 성장 제한
-        { "01113", 300 },
-
-        { "3110", 50 },
-        { "0113", 50 },
 
         // 필요하면 계속 추가
     };
@@ -111,58 +97,79 @@ public static class BoardEvaluator
 
         foreach (var line in GetAllLines(board, player, n))
         {
-            // player 돌이 있는 라인만 평가
-            if (!line.Contains('1')) continue;
-
             score += EvaluateFullLine(line);
         }
 
         return score;
     }
 
-    private static List<string> GetAllLines(int[,] board, int player, int n)
+    // Player 돌이 있는 모든 라인을 반환
+    public static List<string> GetAllLines(int[,] board, int player, int n)
     {
-        List<string> lines = new();
-
-        // =========================
-        // 가로 →
-        // =========================
+        List<(int r, int c)> positions = new();
         for (int r = 0; r < n; r++)
         {
-            lines.Add(GetFullLine(board, r, 0, 0, 1, player, n));
+            for (int c = 0; c < n; c++)
+            {
+                if (board[r, c] == player)
+                    positions.Add((r, c));
+            }
+        }
+        bool[][] starts = new bool[6][];
+        starts[0] = new bool[n];
+        starts[1] = new bool[n];
+        starts[2] = new bool[n];
+        starts[3] = new bool[n];
+        starts[4] = new bool[n];
+        starts[5] = new bool[n];
+
+        foreach (var pos in positions)
+        {
+            starts[0][pos.r] = true;
+            starts[1][pos.c] = true;
+            if (pos.r >= pos.c)
+                starts[2][pos.r - pos.c] = true;
+            else
+                starts[3][pos.c - pos.r] = true;
+
+            if (pos.r + pos.c >= n - 1)
+                starts[4][pos.r + pos.c - n + 1] = true;
+            else
+                starts[5][pos.r + pos.c] = true;
+        }
+        List<string> lines = new();
+
+        for (int i = 0; i < n; i++)
+        {
+            if (starts[0][i])
+                lines.Add(GetFullLine(board, i, 0, Dirs[0].dr, Dirs[0].dc, player, n));
+        }
+        for (int i = 0; i < n; i++)
+        {
+            if (starts[1][i])
+                lines.Add(GetFullLine(board, 0, i, Dirs[1].dr, Dirs[1].dc, player, n));
+        }
+        for (int i = 0; i < n - 4; i++)
+        {
+            if (starts[2][i])
+                lines.Add(GetFullLine(board, i, 0, Dirs[2].dr, Dirs[2].dc, player, n));
+        }
+        for (int i = 1; i < n - 4; i++)
+        {
+            if (starts[3][i])
+                lines.Add(GetFullLine(board, 0, i, Dirs[2].dr, Dirs[2].dc, player, n));
+        }
+        for (int i = 0; i < n - 4; i++)
+        {
+            if (starts[4][i])
+                lines.Add(GetFullLine(board, i, n-1, Dirs[3].dr, Dirs[3].dc, player, n));
+        }
+        for (int i = 4; i < n - 1; i++)
+        {
+            if (starts[5][i])
+                lines.Add(GetFullLine(board, 0, i, Dirs[3].dr, Dirs[3].dc, player, n));
         }
 
-        // =========================
-        // 세로 ↓
-        // =========================
-        for (int c = 0; c < n; c++)
-        {
-            lines.Add(GetFullLine(board, 0, c, 1, 0, player, n));
-        }
-
-        // =========================
-        // 대각선 ↘
-        // =========================
-        for (int r = 0; r < n - 4; r++)
-        {
-            lines.Add(GetFullLine(board, r, 0, 1, 1, player, n));
-        }
-        for (int c = 1; c < n - 4; c++)
-        {
-            lines.Add(GetFullLine(board, 0, c, 1, 1, player, n));
-        }
-
-        // =========================
-        // 대각선 ↗
-        // =========================
-        for (int r = 4; r < n; r++)
-        {
-            lines.Add(GetFullLine(board, r, 0, -1, 1, player, n));
-        }
-        for (int c = 1; c < n - 4; c++)
-        {
-            lines.Add(GetFullLine(board, n - 1, c, -1, 1, player, n));
-        }
 
         return lines;
     }
@@ -171,7 +178,7 @@ public static class BoardEvaluator
     {
         StringBuilder sb = new();
 
-        sb.Append('3');
+        sb.Append('2');
         while (r >= 0 && r < n && c >= 0 && c < n)
         {
 
@@ -182,7 +189,7 @@ public static class BoardEvaluator
             r += dr;
             c += dc;
         }
-        sb.Append('3');
+        sb.Append('2');
         return sb.ToString();
     }
 
