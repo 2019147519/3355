@@ -5,31 +5,27 @@ using UnityEngine;
 
 public class OmokAI
 {
-    // ── 난이도 파라미터 ──────────────────────────
     private struct DifficultyConfig
     {
-        public int Depth;           // 탐색 깊이
-        public int CandidateRange;  // 후보 반경
-        public int MaxCandidates;   // 최대 후보 수
-        public float DefenseWeight;   // 수비 가중치 (낮을수록 멍청)
-        public bool UseImmediate;    // 즉시 승리/막기 선처리 여부
-        public bool UseMoveOrder;    // Move Ordering 여부
-        public float BlunderChance;   // 실수 확률 (0~1)
+        public int Depth;
+        public int CandidateRange;
+        public int MaxCandidates;
+        public float DefenseWeight;
+        public bool UseImmediate;
+        public bool UseMoveOrder;
+        public float BlunderChance;
     }
 
     private static readonly DifficultyConfig[] Configs =
     {
-        // 쉬움 — 얕은 탐색, 자주 실수, 수비 약함
         new() { Depth=2, CandidateRange=1, MaxCandidates=8,
                 DefenseWeight=0.8f, UseImmediate=false,
-                UseMoveOrder=false, BlunderChance=0.35f },
+                UseMoveOrder=false, BlunderChance=0.3f },
 
-        // 보통 — 즉시 승리만 처리, 막기는 가끔 놓침
-        new() { Depth=3, CandidateRange=2, MaxCandidates=12,
-                DefenseWeight=1.2f, UseImmediate=true,
-                UseMoveOrder=false, BlunderChance=0.15f },
+        new() { Depth=4, CandidateRange=2, MaxCandidates=15,
+                DefenseWeight=1.5f, UseImmediate=true,
+                UseMoveOrder=true,  BlunderChance=0.08f },
 
-        // 어려움 — 풀 기능
         new() { Depth=5, CandidateRange=2, MaxCandidates=20,
                 DefenseWeight=1.8f, UseImmediate=true,
                 UseMoveOrder=true,  BlunderChance=0f },
@@ -38,69 +34,72 @@ public class OmokAI
     private DifficultyConfig _cfg;
     private int _aiPlayer;
     private int _humanPlayer;
+    private bool _aiIsBlack;    // ★ AI가 흑인지 캐싱
 
     private readonly Dictionary<long, (int score, int depth)> _ttable = new();
     private static readonly long[,,] _zobrist = InitZobrist();
     private readonly System.Random _rng = new();
 
-    // ── 세팅 ─────────────────────────────────────
     public void Setup(int aiPlayer, int difficulty)
     {
         _aiPlayer = aiPlayer;
         _humanPlayer = aiPlayer == 1 ? 2 : 1;
+        _aiIsBlack = aiPlayer == 1;   // ★
         _cfg = Configs[Mathf.Clamp(difficulty - 1, 0, 2)];
         _ttable.Clear();
     }
 
     // ── 최선 수 반환 ─────────────────────────────
-    public (int row, int col) GetBestMove(int[,] board, int player)
+    public (int row, int col) GetBestMove(int[,] board)
     {
-        _aiPlayer = player;
-        _humanPlayer = player == 1 ? 2 : 1;
         _ttable.Clear();
 
         var candidates = GetCandidates(board);
         if (candidates.Count == 0)
             return (BoardManager.Size / 2, BoardManager.Size / 2);
 
-        // ── 실수 (Blunder) ──────────────────────
-        // 쉬움/보통은 일정 확률로 랜덤 착수
-        if (_cfg.BlunderChance > 0f && _rng.NextDouble() < _cfg.BlunderChance)
-        {
-            var rand = candidates[_rng.Next(candidates.Count)];
-            return (rand.r, rand.c);
-        }
+        // 후보에서 금수 제거 (AI가 흑일 때)
+        if (_aiIsBlack)
+            candidates = FilterForbidden(board, candidates, _aiPlayer);
 
-        // ── 즉시 승리 선처리 ────────────────────
+        // 금수 제거 후 후보 없으면 차선책 (중앙 근처 랜덤)
+        if (candidates.Count == 0)
+            return FallbackMove(board);
+
+        // 실수
+        if (_cfg.BlunderChance > 0f && _rng.NextDouble() < _cfg.BlunderChance)
+            return candidates[_rng.Next(candidates.Count)];
+
+        // 즉시 승리 선처리
         if (_cfg.UseImmediate)
         {
             foreach (var (r, c) in candidates)
                 if (CanWin(board, r, c, _aiPlayer)) return (r, c);
 
-            // 막기 — 보통은 가끔 놓침
             foreach (var (r, c) in candidates)
             {
                 if (!CanWin(board, r, c, _humanPlayer)) continue;
-                // 보통 난이도: 15% 확률로 막기 실패
-                if (_cfg.BlunderChance > 0f && _rng.NextDouble() < 0.15f) continue;
+                if (_cfg.BlunderChance > 0f && _rng.NextDouble() < 0.1f) continue;
                 return (r, c);
             }
         }
 
-        // ── Minimax 탐색 ────────────────────────
+        // Minimax
         int bestScore = int.MinValue;
         int bestR = candidates[0].r, bestC = candidates[0].c;
 
         foreach (var (r, c) in candidates)
         {
-            if (_aiPlayer == 1 && RenjuRule.IsForbidden(board, r, c)) continue;
-
             board[r, c] = _aiPlayer;
             int score = AlphaBeta(board, _cfg.Depth - 1,
                                     int.MinValue, int.MaxValue, false);
             board[r, c] = 0;
 
-            if (score > bestScore) { bestScore = score; bestR = r; bestC = c; }
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestR = r; bestC = c;
+            }
         }
 
         return (bestR, bestC);
@@ -126,51 +125,80 @@ public class OmokAI
 
         int result;
 
-        if (isMax)
+        if (isMax) // AI 차례
         {
+            // ★ AI가 흑이면 금수 제거
+            if (_aiIsBlack)
+                candidates = FilterForbidden(board, candidates, _aiPlayer);
+
             result = int.MinValue;
             foreach (var (r, c) in candidates)
             {
-                if (_aiPlayer == 1 && RenjuRule.IsForbidden(board, r, c)) continue;
-
                 board[r, c] = _aiPlayer;
+
                 if (WinChecker.CheckWin(board, r, c, _aiPlayer))
                 {
                     board[r, c] = 0;
                     result = 10_000_000 + depth;
                     break;
                 }
+
                 int score = AlphaBeta(board, depth - 1, alpha, beta, false);
                 board[r, c] = 0;
                 result = Math.Max(result, score);
                 alpha = Math.Max(alpha, result);
-                if (beta <= alpha) break;   // α–β pruning
+                if (beta <= alpha) break;
             }
         }
-        else
+        else // 상대 차례
         {
+            // ★ 상대가 흑이면 금수 제거
+            bool humanIsBlack = _humanPlayer == 1;
+            if (humanIsBlack)
+                candidates = FilterForbidden(board, candidates, _humanPlayer);
+
             result = int.MaxValue;
             foreach (var (r, c) in candidates)
             {
-                if (_humanPlayer == 1 && RenjuRule.IsForbidden(board, r, c)) continue;
-
                 board[r, c] = _humanPlayer;
+
                 if (WinChecker.CheckWin(board, r, c, _humanPlayer))
                 {
                     board[r, c] = 0;
                     result = -(10_000_000 + depth);
                     break;
                 }
+
                 int score = AlphaBeta(board, depth - 1, alpha, beta, true);
                 board[r, c] = 0;
                 result = Math.Min(result, score);
                 beta = Math.Min(beta, result);
-                if (beta <= alpha) break;   // α–β pruning
+                if (beta <= alpha) break;
             }
         }
 
         _ttable[hash] = (result, depth);
         return result;
+    }
+
+    // ── 금수 필터링 ★ 핵심 ──────────────────────
+    // board를 건드리지 않고 별도 복사본으로 검사
+    private static List<(int r, int c)> FilterForbidden(
+        int[,] board,
+        List<(int r, int c)> candidates,
+        int player)
+    {
+        if (player != 1) return candidates; // 흑만 금수
+
+        var filtered = new List<(int r, int c)>(candidates.Count);
+        foreach (var (r, c) in candidates)
+        {
+            // ★ board 복사본으로 검사 — 원본 오염 없음
+            var copy = CopyBoard(board);
+            if (!RenjuRule.IsForbidden(copy, r, c))
+                filtered.Add((r, c));
+        }
+        return filtered;
     }
 
     // ── 후보 생성 ────────────────────────────────
@@ -183,13 +211,15 @@ public class OmokAI
         for (int r = 0; r < n; r++)
             for (int c = 0; c < n; c++)
             {
-                if (board[r, c] == 0 || !HasNeighbor(board, r, c, n)) continue;
+                if (board[r, c] == 0) continue; // ★ 돌이 있는 셀 기준
 
                 for (int dr = -_cfg.CandidateRange; dr <= _cfg.CandidateRange; dr++)
                     for (int dc = -_cfg.CandidateRange; dc <= _cfg.CandidateRange; dc++)
                     {
+                        if (dr == 0 && dc == 0) continue;
                         int nr = r + dr, nc = c + dc;
-                        if (nr < 0 || nr >= n || nc < 0 || nc >= n || board[nr, nc] != 0) continue;
+                        if (nr < 0 || nr >= n || nc < 0 || nc >= n) continue;
+                        if (board[nr, nc] != 0) continue;       // ★ 빈 칸만
                         if (!visited.Add((nr, nc))) continue;
 
                         int s = _cfg.UseMoveOrder ? HeuristicScore(board, nr, nc) : 0;
@@ -197,8 +227,26 @@ public class OmokAI
                     }
             }
 
+        // ★ 보드에 돌이 하나도 없을 때만 중앙 반환 (AI 선공 첫 수)
         if (scored.Count == 0)
-            scored.Add((0, n / 2, n / 2));
+        {
+            int mid = n / 2;
+            // 중앙이 비어있으면 중앙, 아니면 중앙 주변 빈 칸
+            if (board[mid, mid] == 0)
+                scored.Add((0, mid, mid));
+            else
+            {
+                // 중앙 주변 3x3에서 빈 칸 찾기
+                for (int dr = -1; dr <= 1; dr++)
+                    for (int dc = -1; dc <= 1; dc++)
+                    {
+                        int nr = mid + dr, nc = mid + dc;
+                        if (nr < 0 || nr >= n || nc < 0 || nc >= n) continue;
+                        if (board[nr, nc] == 0)
+                            scored.Add((0, nr, nc));
+                    }
+            }
+        }
 
         if (_cfg.UseMoveOrder)
             scored.Sort((a, b) => b.score.CompareTo(a.score));
@@ -209,6 +257,34 @@ public class OmokAI
         var result = new List<(int, int)>(scored.Count);
         foreach (var (_, r, c) in scored) result.Add((r, c));
         return result;
+    }
+
+    // ── 차선책 (금수 피한 빈칸 탐색) ────────────
+    private (int r, int c) FallbackMove(int[,] board)
+    {
+        int n = board.GetLength(0);
+        // 중앙부터 나선형으로 탐색
+        for (int dist = 0; dist < n; dist++)
+            for (int r = n / 2 - dist; r <= n / 2 + dist; r++)
+                for (int c = n / 2 - dist; c <= n / 2 + dist; c++)
+                {
+                    if (r < 0 || r >= n || c < 0 || c >= n) continue;
+                    if (board[r, c] != 0) continue;
+                    var copy = CopyBoard(board);
+                    if (!RenjuRule.IsForbidden(copy, r, c))
+                        return (r, c);
+                }
+        return (n / 2, n / 2); // 최후 수단
+    }
+
+    // ── 즉시 승리 체크 ───────────────────────────
+    private bool CanWin(int[,] board, int r, int c, int player)
+    {
+        if (board[r, c] != 0) return false;
+        board[r, c] = player;
+        bool win = WinChecker.CheckWin(board, r, c, player);
+        board[r, c] = 0;
+        return win;
     }
 
     // ── 휴리스틱 점수 ────────────────────────────
@@ -225,16 +301,6 @@ public class OmokAI
         return atk + def;
     }
 
-    // ── 즉시 승리 가능 여부 ──────────────────────
-    private bool CanWin(int[,] board, int r, int c, int player)
-    {
-        if (board[r, c] != 0) return false;
-        board[r, c] = player;
-        bool win = WinChecker.CheckWin(board, r, c, player);
-        board[r, c] = 0;
-        return win;
-    }
-
     private bool HasNeighbor(int[,] board, int r, int c, int n)
     {
         for (int dr = -1; dr <= 1; dr++)
@@ -242,9 +308,19 @@ public class OmokAI
             {
                 if (dr == 0 && dc == 0) continue;
                 int nr = r + dr, nc = c + dc;
-                if (nr >= 0 && nr < n && nc >= 0 && nc < n && board[nr, nc] != 0) return true;
+                if (nr >= 0 && nr < n && nc >= 0 && nc < n && board[nr, nc] != 0)
+                    return true;
             }
         return false;
+    }
+
+    // ── 보드 복사 ────────────────────────────────
+    private static int[,] CopyBoard(int[,] board)
+    {
+        int n = board.GetLength(0);
+        var copy = new int[n, n];
+        Array.Copy(board, copy, board.Length);
+        return copy;
     }
 
     // ── Zobrist 해시 ─────────────────────────────

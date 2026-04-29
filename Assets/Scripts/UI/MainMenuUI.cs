@@ -5,84 +5,89 @@ using TMPro;
 
 public class MainMenuUI : MonoBehaviour
 {
-    [Header("Buttons")]
-    [SerializeField] private Button _singlePlayBtn;
-    [SerializeField] private Button _multiPlayBtn;
-    [SerializeField] private Button _aiPlayBtn;
-    [SerializeField] private Button _settingsBtn;
+    [Header("메인 버튼")]
+    [SerializeField] private Button _singleBtn;
+    [SerializeField] private Button _aiBtn;
+    [SerializeField] private Button _multiBtn;
 
-    [Header("Mode Select Panel")]
-    [SerializeField] private GameObject _modeSelectPanel;
+    [Header("난이도 패널")]
+    [SerializeField] private GameObject _diffPanel;
     [SerializeField] private Button _easyBtn;
     [SerializeField] private Button _normalBtn;
     [SerializeField] private Button _hardBtn;
-    [SerializeField] private Button _modeBackBtn;
-    [SerializeField] private TextMeshProUGUI _modeTitleText;
+    [SerializeField] private Button _diffBackBtn;
 
-    private GameMode _pendingMode;
+    [Header("색상 선택 패널 ★ NEW")]
+    [SerializeField] private GameObject _colorPanel;
+    [SerializeField] private Button _blackBtn;   // 내가 흑 (AI=백)
+    [SerializeField] private Button _whiteBtn;   // 내가 백 (AI=흑)
+    [SerializeField] private Button _colorBackBtn;
+
+    private int _pendingDifficulty = 2;
 
     private void OnEnable()
     {
-        _singlePlayBtn.onClick.AddListener(OnSinglePlay);
-        _multiPlayBtn.onClick.AddListener(OnMultiPlay);
-        _aiPlayBtn.onClick.AddListener(OnAIPlay);
-        _settingsBtn.onClick.AddListener(OnSettings);
-        _easyBtn.onClick.AddListener(() => StartWithDifficulty(1));
-        _normalBtn.onClick.AddListener(() => StartWithDifficulty(2));
-        _hardBtn.onClick.AddListener(() => StartWithDifficulty(3));
-        _modeBackBtn.onClick.AddListener(() => _modeSelectPanel.SetActive(false));
+        _singleBtn.onClick.AddListener(StartSingle);
+        _aiBtn.onClick.AddListener(OpenDiffPanel);
+        _multiBtn.onClick.AddListener(OnMulti);
+
+        _easyBtn.onClick.AddListener(() => OnDiffSelected(1));
+        _normalBtn.onClick.AddListener(() => OnDiffSelected(2));
+        _hardBtn.onClick.AddListener(() => OnDiffSelected(3));
+        _diffBackBtn.onClick.AddListener(() => _diffPanel.SetActive(false));
+
+        _blackBtn.onClick.AddListener(() => OnColorSelected(Player.White)); // 내가 흑 → AI 백
+        _whiteBtn.onClick.AddListener(() => OnColorSelected(Player.Black)); // 내가 백 → AI 흑
+        _colorBackBtn.onClick.AddListener(() =>
+        {
+            _colorPanel.SetActive(false);
+            _diffPanel.SetActive(true);
+        });
     }
 
     private void OnDisable()
     {
-        _singlePlayBtn.onClick.RemoveAllListeners();
-        _multiPlayBtn.onClick.RemoveAllListeners();
-        _aiPlayBtn.onClick.RemoveAllListeners();
-        _settingsBtn.onClick.RemoveAllListeners();
+        _singleBtn.onClick.RemoveAllListeners();
+        _aiBtn.onClick.RemoveAllListeners();
+        _multiBtn.onClick.RemoveAllListeners();
         _easyBtn.onClick.RemoveAllListeners();
         _normalBtn.onClick.RemoveAllListeners();
         _hardBtn.onClick.RemoveAllListeners();
-        _modeBackBtn.onClick.RemoveAllListeners();
+        _diffBackBtn.onClick.RemoveAllListeners();
+        _blackBtn.onClick.RemoveAllListeners();
+        _whiteBtn.onClick.RemoveAllListeners();
+        _colorBackBtn.onClick.RemoveAllListeners();
     }
 
-    // ── 버튼 핸들러 ──────────────────────────────
-    private void OnSinglePlay()
-    {
-        _pendingMode = GameMode.Single;
-        StartGame(); // 난이도 선택 없이 바로
-    }
-
-    private void OnMultiPlay()
-    {
-        // 3단계 — 현재는 준비 중 토스트
-        ToastUI.Show("멀티플레이는 준비 중입니다.");
-    }
-
-    private void OnAIPlay()
-    {
-        _pendingMode = GameMode.AI;
-        _modeTitleText.text = "난이도 선택";
-        _modeSelectPanel.SetActive(true);
-    }
-
-    private void OnSettings()
-    {
-        // SettingsUI 추후 구현
-    }
-
-    private void StartWithDifficulty(int level)
-    {
-        _modeSelectPanel.SetActive(false);
-
-        if (_pendingMode == GameMode.AI)
-            GameManager.Instance.SetAIDifficulty(level);
-
-        StartGame();
-    }
-
-    private void StartGame()
+    // ── 핸들러 ──────────────────────────────────
+    private void StartSingle()
     {
         UIManager.Instance.ShowGameHUD();
-        GameManager.Instance.StartGame(_pendingMode);
+        GameManager.Instance.StartGame(GameMode.Single);
     }
+
+    private void OpenDiffPanel()
+    {
+        _diffPanel.SetActive(true);
+    }
+
+    // 난이도 선택 → 색상 선택으로 이동
+    private void OnDiffSelected(int level)
+    {
+        _pendingDifficulty = level;
+        GameManager.Instance.SetAIDifficulty(level);
+        _diffPanel.SetActive(false);
+        _colorPanel.SetActive(true);  // ★ 색상 선택으로
+    }
+
+    // 색상 선택 → 게임 시작
+    private void OnColorSelected(Player aiColor)
+    {
+        _colorPanel.SetActive(false);
+        GameManager.Instance.SetAIColor(aiColor);
+        UIManager.Instance.ShowGameHUD();
+        GameManager.Instance.StartGame(GameMode.AI);
+    }
+
+    private void OnMulti() => ToastUI.Show("멀티플레이는 준비 중입니다.");
 }

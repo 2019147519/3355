@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Core — Board 오브젝트의 각 컴포넌트를 드래그")]
+    [Header("Core")]
     [SerializeField] private BoardManager _board;
     [SerializeField] private TurnManager _turn;
     [SerializeField] private StoneController _stone;
@@ -29,15 +29,14 @@ public class GameManager : MonoBehaviour
     private GameState _state = GameState.MainMenu;
     private IGameMode _mode;
     private int _aiDiff = 2;
+    private Player _aiColor = Player.White;
 
     private void Awake()
     {
-        // ★ 단일 씬 — DontDestroyOnLoad 없음
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
-    // ── 외부 진입 ──────────────────────────────
     public void StartGame(GameMode mode)
     {
         CurrentMode = mode;
@@ -47,23 +46,23 @@ public class GameManager : MonoBehaviour
         _effect.ClearWinLine();
         _state = GameState.Playing;
 
+        _board.OnForbiddenMove -= OnForbiddenMove;
         _board.OnForbiddenMove += OnForbiddenMove;
 
         _mode = mode switch
         {
-            GameMode.AI => new AIPlayMode(_aiDiff),
+            GameMode.AI => new AIPlayMode(_aiDiff, _aiColor),
             GameMode.Multi => new MultiPlayMode(),
             _ => new SinglePlayMode()
         };
         _mode.Initialize(this);
 
-        SetInput(true);
         FireTurn();
     }
 
     public void SetAIDifficulty(int level) => _aiDiff = level;
+    public void SetAIColor(Player color) => _aiColor = color;
 
-    // ── 착수 ───────────────────────────────────
     public void OnBoardTapped(int row, int col)
     {
         if (_state != GameState.Playing) return;
@@ -87,38 +86,37 @@ public class GameManager : MonoBehaviour
         FireTurn();
     }
 
-    private void OnForbiddenMove(int row, int col, ForbiddenType type)
-    {
-        string msg = type switch
-        {
-            ForbiddenType.DoubleThree => "3-3 금수입니다!",
-            ForbiddenType.DoubleFour => "4-4 금수입니다!",
-            ForbiddenType.Overline => "장목(6목 이상) 금수입니다!",
-            _ => "금수입니다!"
-        };
-        ToastUI.Show(msg);
-    }
-
-    private void OnDestroy()
-    {
-        if (_board != null)
-            _board.OnForbiddenMove -= OnForbiddenMove;
-    }
-
-    // ── 무르기 ─────────────────────────────────
     public void RequestUndo()
     {
         if (_state != GameState.Playing) return;
-        if (!_board.Undo(out _, out _, out _)) return;
 
         if (CurrentMode == GameMode.AI)
-            _board.Undo(out _, out _, out _); // AI 수도 같이 무르기
+        {
+            var aiMode = _mode as AIPlayMode;
+            if (aiMode == null) return;
 
-        _turn.Revert();
+            // 현재가 사람 차례 = 직전이 AI 수
+            bool aiJustMoved = _turn.Current == aiMode.HumanPlayer;
+
+            if (aiJustMoved)
+            {
+                if (!_board.Undo(out _, out _, out _)) return;
+                _turn.Revert();
+            }
+
+            // 사람 수 제거
+            if (!_board.Undo(out _, out _, out _)) return;
+            _turn.Revert();
+        }
+        else
+        {
+            if (!_board.Undo(out _, out _, out _)) return;
+            _turn.Revert();
+        }
+
         FireTurn();
     }
 
-    // ── 타임아웃 ───────────────────────────────
     public void OnTimeOut()
     {
         if (_state != GameState.Playing) return;
@@ -127,7 +125,6 @@ public class GameManager : MonoBehaviour
         FireTurn();
     }
 
-    // ── 종료 ───────────────────────────────────
     private void EndGame(Player winner)
     {
         _state = GameState.GameOver;
@@ -140,14 +137,38 @@ public class GameManager : MonoBehaviour
     private void FireTurn()
     {
         OnTurnChanged?.Invoke(_turn.Current);
-        _mode.OnTurnStart(_turn.Current);
+        // ★ 다음 프레임에 모드 OnTurnStart 호출 — UI 처리 완료 후 AI 코루틴 시작 보장
+        StartCoroutine(DelayedModeStart(_turn.Current));
+    }
+
+    private System.Collections.IEnumerator DelayedModeStart(Player current)
+    {
+        yield return null;
+        if (_state == GameState.Playing)
+            _mode.OnTurnStart(current);
+    }
+
+    private void OnForbiddenMove(int row, int col, ForbiddenType type)
+    {
+        string msg = type switch
+        {
+            ForbiddenType.DoubleThree => "3-3 금수입니다!",
+            ForbiddenType.DoubleFour => "4-4 금수입니다!",
+            ForbiddenType.Overline => "장목(6목 이상) 금수입니다!",
+            _ => "금수입니다!"
+        };
+        ToastUI.Show(msg);
     }
 
     public void SetInput(bool on) => _input.SetEnabled(on);
 
-    // AIPlayMode가 Coroutine 시작할 때 사용
-    public new Coroutine StartCoroutine(System.Collections.IEnumerator r)
-        => base.StartCoroutine(r);
+    // ★ 오버라이드 제거, RunCoroutine으로 대체
+    public void RunCoroutine(System.Collections.IEnumerator routine)
+        => StartCoroutine(routine);
 
-
+    private void OnDestroy()
+    {
+        if (_board != null)
+            _board.OnForbiddenMove -= OnForbiddenMove;
+    }
 }
