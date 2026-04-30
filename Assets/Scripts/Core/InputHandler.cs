@@ -29,24 +29,19 @@ public class InputHandler : MonoBehaviour
 
         if (screen == null) return;
 
-        Debug.Log($"[InputHandler] 클릭 감지 — screen={screen}");
 
         var ray = _cam.ScreenPointToRay(screen.Value);
 
         if (!Physics.Raycast(ray, out var hit, 100f, _boardMask))
         {
-            Debug.Log("[InputHandler] Raycast 실패 — 보드 못 맞춤");
             return;
         }
 
-        Debug.Log($"[InputHandler] Raycast 성공 — hit={hit.point}");
 
         var (row, col) = _stone.WorldToGrid(hit.point);
-        Debug.Log($"[InputHandler] 그리드 변환 — row={row}, col={col}");
 
         if (row < 0 || row >= BoardManager.Size || col < 0 || col >= BoardManager.Size)
         {
-            Debug.Log("[InputHandler] 범위 벗어남");
             return;
         }
 

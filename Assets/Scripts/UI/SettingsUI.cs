@@ -1,30 +1,56 @@
 ﻿// Assets/Scripts/UI/SettingsUI.cs
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using UnityEngine.EventSystems;
 
 public class SettingsUI : MonoBehaviour
 {
     [Header("BGM")]
     [SerializeField] private Button _bgmMuteBtn;
-    [SerializeField] private Image _bgmMuteIcon;   // 스피커 아이콘 Image
-    [SerializeField] private Sprite _bgmOnSprite;   // 🔊
-    [SerializeField] private Sprite _bgmOffSprite;  // 🔇
     [SerializeField] private Slider _bgmSlider;
 
     [Header("SFX")]
     [SerializeField] private Button _sfxMuteBtn;
-    [SerializeField] private Image _sfxMuteIcon;
-    [SerializeField] private Sprite _sfxOnSprite;
-    [SerializeField] private Sprite _sfxOffSprite;
     [SerializeField] private Slider _sfxSlider;
 
     [Header("닫기")]
     [SerializeField] private Button _closeBtn;
 
+    private static readonly Color COLOR_ACTIVE = new Color(0.2f, 0.6f, 1f);
+    private static readonly Color COLOR_MUTED = new Color(0.35f, 0.35f, 0.35f);
+    private static readonly Color COLOR_SLIDER_ON = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color COLOR_SLIDER_OFF = new Color(1f, 1f, 1f, 0.35f);
+
+    private Image _bgmBtnImage;
+    private Image _sfxBtnImage;
+
+    private void Awake()
+    {
+        _bgmBtnImage = _bgmMuteBtn.GetComponent<Image>();
+        _sfxBtnImage = _sfxMuteBtn.GetComponent<Image>();
+
+        // ★ 슬라이더에 포인터업 이벤트 추가
+        AddPointerUpSound(_bgmSlider);
+        AddPointerUpSound(_sfxSlider);
+    }
+
+    // ── 포인터업 이벤트 등록 ─────────────────────
+    private void AddPointerUpSound(Slider slider)
+    {
+        // EventTrigger 컴포넌트 추가 (없으면 자동 생성)
+        var trigger = slider.gameObject.GetComponent<EventTrigger>()
+                   ?? slider.gameObject.AddComponent<EventTrigger>();
+
+        var entry = new EventTrigger.Entry
+        {
+            eventID = EventTriggerType.PointerUp
+        };
+        entry.callback.AddListener(_ => AudioManager.Instance?.PlayButton());
+        trigger.triggers.Add(entry);
+    }
+
     private void OnEnable()
     {
-        // 저장된 값 반영
         RefreshAll();
 
         _bgmMuteBtn.onClick.AddListener(OnBGMMute);
@@ -45,7 +71,6 @@ public class SettingsUI : MonoBehaviour
         _sfxSlider.onValueChanged.RemoveAllListeners();
     }
 
-    // ── 전체 갱신 ────────────────────────────────
     private void RefreshAll()
     {
         var am = AudioManager.Instance;
@@ -54,59 +79,53 @@ public class SettingsUI : MonoBehaviour
         _bgmSlider.SetValueWithoutNotify(am.BGMVolume);
         _sfxSlider.SetValueWithoutNotify(am.SFXVolume);
 
-        RefreshBGMIcon();
-        RefreshSFXIcon();
+        RefreshBGM();
+        RefreshSFX();
     }
 
-    private void RefreshBGMIcon()
+    private void RefreshBGM()
     {
         bool muted = AudioManager.Instance.BGMMuted;
-        _bgmMuteIcon.sprite = muted ? _bgmOffSprite : _bgmOnSprite;
-
-        // 슬라이더 투명도 — 음소거 시 흐리게
-        var c = _bgmSlider.GetComponent<CanvasGroup>();
-        if (c) c.alpha = muted ? 0.4f : 1f;
+        _bgmBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE;
+        SetSliderAlpha(_bgmSlider, muted);
     }
 
-    private void RefreshSFXIcon()
+    private void RefreshSFX()
     {
         bool muted = AudioManager.Instance.SFXMuted;
-        _sfxMuteIcon.sprite = muted ? _sfxOffSprite : _sfxOnSprite;
-
-        var c = _sfxSlider.GetComponent<CanvasGroup>();
-        if (c) c.alpha = muted ? 0.4f : 1f;
+        _sfxBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE;
+        SetSliderAlpha(_sfxSlider, muted);
     }
 
-    // ── 핸들러 ───────────────────────────────────
+    private void SetSliderAlpha(Slider slider, bool muted)
+    {
+        var fill = slider.fillRect?.GetComponent<Image>();
+        var handle = slider.handleRect?.GetComponent<Image>();
+        var bg = slider.GetComponentInChildren<Image>();
+
+        if (fill) fill.color = muted ? COLOR_SLIDER_OFF : COLOR_SLIDER_ON;
+        if (handle) handle.color = muted ? COLOR_SLIDER_OFF : COLOR_SLIDER_ON;
+        if (bg) { var c = bg.color; c.a = muted ? 0.35f : 1f; bg.color = c; }
+    }
+
     private void OnBGMMute()
     {
         AudioManager.Instance.ToggleBGMMute();
-        AudioManager.Instance.PlayButton();
-        RefreshBGMIcon();
+        RefreshBGM();
     }
 
     private void OnSFXMute()
     {
         AudioManager.Instance.ToggleSFXMute();
-        AudioManager.Instance.PlayButton();
-        RefreshSFXIcon();
+        RefreshSFX();
     }
 
     private void OnBGMSlider(float val)
-    {
-        AudioManager.Instance.SetBGMVolume(val);
-    }
+        => AudioManager.Instance.SetBGMVolume(val);
 
     private void OnSFXSlider(float val)
-    {
-        AudioManager.Instance.SetSFXVolume(val);
-        // SFX 슬라이더 조절 시 미리듣기
-        AudioManager.Instance.PlayButton();
-    }
+        => AudioManager.Instance.SetSFXVolume(val); // ★ PlayButton() 없음
 
     private void OnClose()
-    {
-        AudioManager.Instance.PlayButton();
-        gameObject.SetActive(false);
-    }
+        => gameObject.SetActive(false);
 }

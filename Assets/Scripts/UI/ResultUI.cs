@@ -17,16 +17,14 @@ public class ResultUI : MonoBehaviour
     {
         _rematchBtn.onClick.AddListener(OnRematch);
         _menuBtn.onClick.AddListener(OnMenu);
-
-        // ★ SetActive(false) 대신 CanvasGroup으로 숨김
-        //   오브젝트는 항상 켜둬서 Awake/코루틴 문제 없앰
-        _cg.alpha = 0f;
-        _cg.interactable = false;
-        _cg.blocksRaycasts = false;
+        gameObject.SetActive(false); // ★ 편집 시 꺼진 채로
     }
 
     public void Show(Player winner)
     {
+        gameObject.SetActive(true); // ★ 필요할 때만 켬
+        AudioManager.Instance?.PlayWin();
+
         _titleText.text = winner switch
         {
             Player.Black => "흑돌 승리!",
@@ -38,16 +36,15 @@ public class ResultUI : MonoBehaviour
             : "5목 완성!";
         _moveText.text = $"총 {GameManager.Instance.Turn.MoveCount}수";
 
-        // ★ 오브젝트가 항상 켜져 있으므로 코루틴 바로 실행 가능
         StopAllCoroutines();
         StartCoroutine(FadeIn());
     }
 
     private IEnumerator FadeIn()
     {
+        _cg.alpha = 0f;
         _cg.interactable = false;
         _cg.blocksRaycasts = false;
-        _cg.alpha = 0f;
 
         for (float t = 0f; t < 1f; t += Time.deltaTime / 0.3f)
         {
@@ -60,23 +57,15 @@ public class ResultUI : MonoBehaviour
         _cg.blocksRaycasts = true;
     }
 
-    private void Hide()
-    {
-        StopAllCoroutines();
-        _cg.alpha = 0f;
-        _cg.interactable = false;
-        _cg.blocksRaycasts = false;
-    }
-
     private void OnRematch()
     {
-        Hide();
+        gameObject.SetActive(false);
         GameManager.Instance.StartGame(GameManager.Instance.CurrentMode);
     }
 
     private void OnMenu()
     {
-        Hide();
+        gameObject.SetActive(false);
         Time.timeScale = 1f;
         UIManager.Instance.ShowMainMenu();
     }

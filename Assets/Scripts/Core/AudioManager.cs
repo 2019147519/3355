@@ -37,6 +37,7 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         LoadSettings();
         Apply();
+        PlayMenuBGM(); // ★ 씬 시작 시 바로 재생
     }
 
     // ── BGM ─────────────────────────────────────
