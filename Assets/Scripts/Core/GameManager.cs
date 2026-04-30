@@ -57,6 +57,11 @@ public class GameManager : MonoBehaviour
         };
         _mode.Initialize(this);
 
+        // ★ 싱글/멀티는 바로 입력 허용
+        //   AI는 OnTurnStart에서 처리 (AI 선공이면 false, 사람 선공이면 true)
+        if (mode != GameMode.AI)
+            SetInput(true);
+
         FireTurn();
     }
 
@@ -72,6 +77,8 @@ public class GameManager : MonoBehaviour
 
         OnMoveMade?.Invoke(row, col, player);
         _mode.OnStonePlace(row, col, _turn.Current);
+        
+        AudioManager.Instance?.PlayStone();
 
         if (_board.CheckWin(row, col, player))
         {
@@ -130,6 +137,11 @@ public class GameManager : MonoBehaviour
         _state = GameState.GameOver;
         SetInput(false);
         _mode.OnGameEnd(winner);
+
+        // ★ 승자 기준 사운드
+        if (winner != Player.None)
+            AudioManager.Instance?.PlayWin();
+
         OnGameOver?.Invoke(winner);
         _resultUI.Show(winner);
     }
@@ -150,6 +162,7 @@ public class GameManager : MonoBehaviour
 
     private void OnForbiddenMove(int row, int col, ForbiddenType type)
     {
+        AudioManager.Instance?.PlayForbidden(); // ★
         string msg = type switch
         {
             ForbiddenType.DoubleThree => "3-3 금수입니다!",

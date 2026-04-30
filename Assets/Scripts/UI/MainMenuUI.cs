@@ -23,6 +23,10 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button _whiteBtn;   // 내가 백 (AI=흑)
     [SerializeField] private Button _colorBackBtn;
 
+    [Header("설정")]
+    [SerializeField] private Button _settingsBtn;
+    [SerializeField] private GameObject _settingsPanel;
+
     private int _pendingDifficulty = 2;
 
     private void OnEnable()
@@ -43,6 +47,8 @@ public class MainMenuUI : MonoBehaviour
             _colorPanel.SetActive(false);
             _diffPanel.SetActive(true);
         });
+
+        _settingsBtn.onClick.AddListener(OnSettings);
     }
 
     private void OnDisable()
@@ -57,6 +63,7 @@ public class MainMenuUI : MonoBehaviour
         _blackBtn.onClick.RemoveAllListeners();
         _whiteBtn.onClick.RemoveAllListeners();
         _colorBackBtn.onClick.RemoveAllListeners();
+        _settingsBtn.onClick.RemoveAllListeners();
     }
 
     // ── 핸들러 ──────────────────────────────────
@@ -90,4 +97,10 @@ public class MainMenuUI : MonoBehaviour
     }
 
     private void OnMulti() => ToastUI.Show("멀티플레이는 준비 중입니다.");
+
+    private void OnSettings()
+    {
+        AudioManager.Instance.PlayButton();
+        _settingsPanel.SetActive(true);
+    }
 }

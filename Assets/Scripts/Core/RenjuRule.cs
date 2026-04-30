@@ -11,20 +11,14 @@ public static class RenjuRule
     // ── 외부 진입점 ─────────────────────────────
     public static ForbiddenType GetForbiddenType(int[,] board, int row, int col)
     {
-        // 가상 착수
         board[row, col] = Black;
-
         ForbiddenType result = ForbiddenType.None;
 
-        // 1. 장목 먼저 (6목 이상)
-        if (IsOverline(board, row, col))
+        try
         {
-            result = ForbiddenType.Overline;
-        }
-        else
-        {
-            // 5목이 되는 자리는 금수 아님 (무조건 승리)
-            if (!IsFiveExact(board, row, col))
+            if (IsOverline(board, row, col))
+                result = ForbiddenType.Overline;
+            else if (!IsFiveExact(board, row, col))
             {
                 int fours = CountFours(board, row, col);
                 int openThrees = CountOpenThrees(board, row, col);
@@ -33,8 +27,12 @@ public static class RenjuRule
                 else if (openThrees >= 2) result = ForbiddenType.DoubleThree;
             }
         }
+        finally
+        {
+            // ★ 예외 발생해도 반드시 복구
+            board[row, col] = 0;
+        }
 
-        board[row, col] = 0;
         return result;
     }
 

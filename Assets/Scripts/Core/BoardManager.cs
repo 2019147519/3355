@@ -27,10 +27,11 @@ public class BoardManager : MonoBehaviour
         if (row < 0 || row >= Size || col < 0 || col >= Size) return false;
         if (Board[row, col] != 0) return false;
 
-        // 흑 금수 체크
-        if (player == 1) // 1 = Player.Black
+        // ★ 흑 금수 체크 — 복사본으로 검사해서 원본 오염 방지
+        if (player == 1)
         {
-            var forbidden = RenjuRule.GetForbiddenType(Board, row, col);
+            var copy = GetCopy();
+            var forbidden = RenjuRule.GetForbiddenType(copy, row, col);
             if (forbidden != ForbiddenType.None)
             {
                 OnForbiddenMove?.Invoke(row, col, forbidden);

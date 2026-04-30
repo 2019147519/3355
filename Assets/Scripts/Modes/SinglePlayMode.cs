@@ -6,18 +6,9 @@ public class SinglePlayMode : IGameMode
 
     public void Initialize(GameManager gm) => _gm = gm;
 
-    public void OnTurnStart(Player currentPlayer)
-    {
-        // HUD에 현재 플레이어 표시만 하면 됨
-        // UI 이벤트는 GameManager가 브로드캐스트
-    }
+    public void OnTurnStart(Player current)
+        => _gm.SetInput(true); // ★ 항상 입력 허용
 
     public void OnStonePlace(int row, int col, Player player) { }
-
-    public void OnGameEnd(Player winner)
-    {
-        // 결과 UI 표시는 GameManager 담당
-    }
-
-    public void Cleanup() { }
+    public void OnGameEnd(Player winner) => _gm.SetInput(false);
 }
