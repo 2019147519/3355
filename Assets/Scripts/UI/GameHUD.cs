@@ -81,9 +81,8 @@ public class GameHUD : MonoBehaviour
         {
             t -= Time.deltaTime;
             float ratio = t / _timeLimit;
-            _timerText.text = Mathf.CeilToInt(t).ToString();
+            _timerText.text = Mathf.CeilToInt(t).ToString() + "초";
             _timerBar.fillAmount = ratio;
-            _timerBar.color = ratio < 0.3f ? Color.red : Color.green;
             yield return null;
         }
         GameManager.Instance?.OnTimeOut();

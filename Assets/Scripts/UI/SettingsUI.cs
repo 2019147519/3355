@@ -13,6 +13,10 @@ public class SettingsUI : MonoBehaviour
     [SerializeField] private Button _sfxMuteBtn;
     [SerializeField] private Slider _sfxSlider;
 
+    [Header("Icons")]
+    [SerializeField] private Sprite _soundOnSprite;
+    [SerializeField] private Sprite _soundOffSprite;
+
     [Header("닫기")]
     [SerializeField] private Button _closeBtn;
 
@@ -88,12 +92,24 @@ public class SettingsUI : MonoBehaviour
         bool muted = AudioManager.Instance.BGMMuted;
         _bgmBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE;
         SetSliderAlpha(_bgmSlider, muted);
+
+        if (_bgmBtnImage != null)
+            _bgmBtnImage.sprite = muted ? _soundOffSprite : _soundOnSprite;
+
+        _bgmBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE; 
+        SetSliderAlpha(_bgmSlider, muted);
     }
 
     private void RefreshSFX()
     {
         bool muted = AudioManager.Instance.SFXMuted;
         _sfxBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE;
+        SetSliderAlpha(_sfxSlider, muted);
+
+        if (_sfxBtnImage != null)
+            _sfxBtnImage.sprite = muted ? _soundOffSprite : _soundOnSprite;
+
+        _sfxBtnImage.color = muted ? COLOR_MUTED : COLOR_ACTIVE; 
         SetSliderAlpha(_sfxSlider, muted);
     }
 
