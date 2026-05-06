@@ -14,7 +14,9 @@ public class GameHUD : MonoBehaviour
     [Header("타이머")]
     [SerializeField] private TextMeshProUGUI _timerText;
     [SerializeField] private Image _timerBar;
-    [SerializeField] private float _timeLimit = 60f;
+
+    // ★ Inspector 고정값 제거 — 모드별로 코드에서 결정
+    private float _timeLimit;
 
     [Header("수 카운트")]
     [SerializeField] private TextMeshProUGUI _moveText;
@@ -33,7 +35,6 @@ public class GameHUD : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm == null) return;
 
-        // ★ 람다 대신 메서드 참조 — OnDisable에서 정확히 해제 가능
         gm.OnTurnChanged += OnTurnChanged;
         gm.OnMoveMade += OnMoveMade;
         gm.OnGameOver += OnGameOver;
@@ -52,13 +53,22 @@ public class GameHUD : MonoBehaviour
         gm.OnGameOver -= OnGameOver;
     }
 
-    // ── 이벤트 핸들러 ─────────────────────────
+    // ── 이벤트 핸들러 ────────────────────────────
     private void OnTurnChanged(Player p)
     {
         bool isBlack = p == Player.Black;
         _turnText.text = isBlack ? "● 흑돌 차례" : "○ 백돌 차례";
         _blackIndicator.SetActive(isBlack);
         _whiteIndicator.SetActive(!isBlack);
+
+        // ★ 모드별 타이머 설정
+        _timeLimit = GameManager.Instance.CurrentMode switch
+        {
+            GameMode.AI => 60f,
+            GameMode.Multi => 15f,
+            _ => 15f  // Single
+        };
+
         RestartTimer();
     }
 
@@ -67,7 +77,7 @@ public class GameHUD : MonoBehaviour
 
     private void OnGameOver(Player _) => StopTimer();
 
-    // ── 타이머 ────────────────────────────────
+    // ── 타이머 ───────────────────────────────────
     private void RestartTimer()
     {
         if (_timerCo != null) StopCoroutine(_timerCo);
@@ -77,14 +87,17 @@ public class GameHUD : MonoBehaviour
     private IEnumerator RunTimer()
     {
         float t = _timeLimit;
+
         while (t > 0f)
         {
             t -= Time.deltaTime;
             float ratio = t / _timeLimit;
-            _timerText.text = Mathf.CeilToInt(t).ToString() + "초";
+            _timerText.text = Mathf.CeilToInt(t).ToString();
             _timerBar.fillAmount = ratio;
+            _timerBar.color = ratio < 0.3f ? Color.red : Color.green;
             yield return null;
         }
+
         GameManager.Instance?.OnTimeOut();
     }
 
@@ -95,7 +108,9 @@ public class GameHUD : MonoBehaviour
         _timerBar.fillAmount = 0f;
     }
 
+    // ── 버튼 ─────────────────────────────────────
     private void OnUndo() => GameManager.Instance.RequestUndo();
+
     private void OnPause()
     {
         Time.timeScale = 0f;

@@ -1,131 +1,128 @@
 ﻿// Assets/Scripts/UI/MainMenuUI.cs
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 public class MainMenuUI : MonoBehaviour
 {
-    [Header("메인 버튼 그룹")]
-    [SerializeField] private GameObject _mainButtonGroup; // ★ 버튼들 묶은 부모 오브젝트
-
-    [Header("메인 버튼")]
-    [SerializeField] private Button _singleBtn;
-    [SerializeField] private Button _aiBtn;
-    [SerializeField] private Button _multiBtn;
-    [SerializeField] private Button _settingsBtn;
-
-    [Header("난이도 패널")]
-    [SerializeField] private GameObject _diffPanel;
-    [SerializeField] private Button _easyBtn;
-    [SerializeField] private Button _normalBtn;
-    [SerializeField] private Button _hardBtn;
-    [SerializeField] private Button _diffBackBtn;
-
-    [Header("색상 선택 패널")]
-    [SerializeField] private GameObject _colorPanel;
-    [SerializeField] private Button _blackBtn;
-    [SerializeField] private Button _whiteBtn;
-    [SerializeField] private Button _colorBackBtn;
-
-    [Header("설정 패널")]
+    [Header("패널들")]
+    [SerializeField] private GameObject _selectPanel;
+    [SerializeField] private GameObject _gameModePanel;
+    [SerializeField] private GameObject _difficultyPanel;
+    [SerializeField] private GameObject _colorSelectPanel;
     [SerializeField] private GameObject _settingsPanel;
+    [SerializeField] private GameObject _nicknamePanel;
 
-    private int _pendingDifficulty = 2;
-
+    // ── 초기화 ───────────────────────────────────
     private void OnEnable()
     {
-        _singleBtn.onClick.AddListener(StartSingle);
-        _aiBtn.onClick.AddListener(OpenDiffPanel);
-        _multiBtn.onClick.AddListener(OnMulti);
-        _settingsBtn.onClick.AddListener(OpenSettings);
-
-        _easyBtn.onClick.AddListener(() => OnDiffSelected(1));
-        _normalBtn.onClick.AddListener(() => OnDiffSelected(2));
-        _hardBtn.onClick.AddListener(() => OnDiffSelected(3));
-        _diffBackBtn.onClick.AddListener(CloseDiffPanel);
-
-        _blackBtn.onClick.AddListener(() => OnColorSelected(Player.White));
-        _whiteBtn.onClick.AddListener(() => OnColorSelected(Player.Black));
-        _colorBackBtn.onClick.AddListener(CloseColorPanel);
+        // 메인메뉴 열릴 때마다 Select 패널부터 시작
+        ShowOnly(_selectPanel);
+        // 닉네임은 별도 — 항상 켜둠
+        _nicknamePanel.SetActive(true);
     }
 
     private void OnDisable()
     {
-        _singleBtn.onClick.RemoveAllListeners();
-        _aiBtn.onClick.RemoveAllListeners();
-        _multiBtn.onClick.RemoveAllListeners();
-        _settingsBtn.onClick.RemoveAllListeners();
-        _easyBtn.onClick.RemoveAllListeners();
-        _normalBtn.onClick.RemoveAllListeners();
-        _hardBtn.onClick.RemoveAllListeners();
-        _diffBackBtn.onClick.RemoveAllListeners();
-        _blackBtn.onClick.RemoveAllListeners();
-        _whiteBtn.onClick.RemoveAllListeners();
-        _colorBackBtn.onClick.RemoveAllListeners();
+        // 게임 씬 진입 시 닉네임 패널 끔
+        _nicknamePanel.SetActive(false);
     }
 
-    // ── 설정 ─────────────────────────────────────
-    private void OpenSettings()
+    // ── 패널 전환 헬퍼 ───────────────────────────
+    private void ShowOnly(GameObject target)
     {
-        _mainButtonGroup.SetActive(false); // ★ 메인 버튼 전체 숨김
-        _settingsPanel.SetActive(true);
+        _selectPanel.SetActive(target == _selectPanel);
+        _gameModePanel.SetActive(target == _gameModePanel);
+        _difficultyPanel.SetActive(target == _difficultyPanel);
+        _colorSelectPanel.SetActive(target == _colorSelectPanel);
+        _settingsPanel.SetActive(target == _settingsPanel);
+        // 닉네임은 ShowOnly 대상 아님 — 별도 관리
     }
 
-    // SettingsUI 닫기 버튼에서 호출할 수 있도록 public
-    public void CloseSettings()
-    {
-        _settingsPanel.SetActive(false);
-        _mainButtonGroup.SetActive(true);  // ★ 메인 버튼 복원
-    }
+    // ══ Select 패널 ══════════════════════════════
+    // SelectPanel의 "시작" 버튼 OnClick 연결
+    public void OnSelectStart()
+        => ShowOnly(_gameModePanel);
 
-    public void ClosePlayMode()
+    // ══ GameMode 패널 ════════════════════════════
+    // SingleBtn OnClick
+    public void OnModeSingle()
     {
-        _settingsPanel.SetActive(false);
-        _mainButtonGroup.SetActive(true);  // ★ 메인 버튼 복원
-    }
-
-    // ── 싱글 ─────────────────────────────────────
-    private void StartSingle()
-    {
+        _nicknamePanel.SetActive(false);
         UIManager.Instance.ShowGameHUD();
         GameManager.Instance.StartGame(GameMode.Single);
     }
 
-    // ── AI 난이도 ─────────────────────────────────
-    private void OpenDiffPanel()
-    {
-        _mainButtonGroup.SetActive(false);
-        _diffPanel.SetActive(true);
-    }
+    // AIBtn OnClick
+    public void OnModeAI()
+        => ShowOnly(_difficultyPanel);
 
-    private void CloseDiffPanel()
-    {
-        _diffPanel.SetActive(false);
-        _mainButtonGroup.SetActive(true);
-    }
+    // MultiBtn OnClick
+    public void OnModeMulti()
+        => ToastUI.Show("멀티플레이는 준비 중입니다.");
 
-    private void OnDiffSelected(int level)
+    // GameMode 뒤로가기
+    public void OnGameModeBack()
+        => ShowOnly(_selectPanel);
+
+    // ══ Difficulty 패널 ══════════════════════════
+    public void OnDiffEasy() => SelectDiff(1);
+    public void OnDiffNormal() => SelectDiff(2);
+    public void OnDiffHard() => SelectDiff(3);
+
+    private void SelectDiff(int level)
     {
-        _pendingDifficulty = level;
         GameManager.Instance.SetAIDifficulty(level);
-        _diffPanel.SetActive(false);
-        _colorPanel.SetActive(true);
+        ShowOnly(_colorSelectPanel);
     }
 
-    // ── AI 색상 ───────────────────────────────────
-    private void CloseColorPanel()
-    {
-        _colorPanel.SetActive(false);
-        _diffPanel.SetActive(true);
-    }
+    // Difficulty 뒤로가기
+    public void OnDiffBack()
+        => ShowOnly(_gameModePanel);
 
-    private void OnColorSelected(Player aiColor)
+    // ══ ColorSelect 패널 ═════════════════════════
+    // 내가 흑 선택 → AI는 백
+    public void OnColorBlack()
+        => StartAI(Player.White);
+
+    // 내가 백 선택 → AI는 흑
+    public void OnColorWhite()
+        => StartAI(Player.Black);
+
+    private void StartAI(Player aiColor)
     {
-        _colorPanel.SetActive(false);
         GameManager.Instance.SetAIColor(aiColor);
+        _nicknamePanel.SetActive(false);
         UIManager.Instance.ShowGameHUD();
         GameManager.Instance.StartGame(GameMode.AI);
     }
 
-    private void OnMulti() => ToastUI.Show("멀티플레이는 준비 중입니다.");
+    // ColorSelect 뒤로가기
+    public void OnColorBack()
+        => ShowOnly(_difficultyPanel);
+
+    // ══ Settings 패널 ════════════════════════════
+    // 어느 패널에서든 Settings 버튼 누를 때
+    // → 현재 패널 기억 후 Settings 열기
+    private GameObject _prevPanel;
+
+    public void OnSettingsOpen()
+    {
+        // 현재 켜진 패널 기억
+        _prevPanel = GetCurrentPanel();
+        ShowOnly(_settingsPanel);
+    }
+
+    public void OnSettingsClose()
+    {
+        // 이전 패널로 복귀
+        ShowOnly(_prevPanel != null ? _prevPanel : _selectPanel);
+    }
+
+    private GameObject GetCurrentPanel()
+    {
+        if (_selectPanel.activeSelf) return _selectPanel;
+        if (_gameModePanel.activeSelf) return _gameModePanel;
+        if (_difficultyPanel.activeSelf) return _difficultyPanel;
+        if (_colorSelectPanel.activeSelf) return _colorSelectPanel;
+        return _selectPanel;
+    }
 }

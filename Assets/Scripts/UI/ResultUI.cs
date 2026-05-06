@@ -67,6 +67,7 @@ public class ResultUI : MonoBehaviour
     {
         gameObject.SetActive(false);
         Time.timeScale = 1f;
+        AudioManager.Instance?.PlayMenuBGM(); // ¡Ú ¸Þ´º BGM º¹±Í
         UIManager.Instance.ShowMainMenu();
     }
 }

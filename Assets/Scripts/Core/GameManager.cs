@@ -39,6 +39,9 @@ public class GameManager : MonoBehaviour
 
     public void StartGame(GameMode mode)
     {
+        // ★ 이전 게임의 잔여 코루틴 전부 정리
+        StopAllCoroutines();
+
         CurrentMode = mode;
         _board.Init();
         _turn.Reset();
@@ -57,11 +60,10 @@ public class GameManager : MonoBehaviour
         };
         _mode.Initialize(this);
 
-        // ★ 싱글/멀티는 바로 입력 허용
-        //   AI는 OnTurnStart에서 처리 (AI 선공이면 false, 사람 선공이면 true)
         if (mode != GameMode.AI)
             SetInput(true);
 
+        AudioManager.Instance?.PlayGameBGM();
         FireTurn();
     }
 
@@ -135,16 +137,13 @@ public class GameManager : MonoBehaviour
     private void EndGame(Player winner)
     {
         _state = GameState.GameOver;
+        StopAllCoroutines(); // ★ DelayedModeStart 등 잔여 코루틴 정리
         SetInput(false);
         _mode.OnGameEnd(winner);
-
-        // ★ 승자 기준 사운드
-        if (winner != Player.None)
-            AudioManager.Instance?.PlayWin();
-
         OnGameOver?.Invoke(winner);
         _resultUI.Show(winner);
     }
+
 
     private void FireTurn()
     {
