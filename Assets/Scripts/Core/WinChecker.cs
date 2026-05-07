@@ -37,14 +37,26 @@ public static class WinChecker
         return true;
     }
 
-    public static List<(int, int)> GetWinLine(int[,] board, int row, int col, int player)
+    public static List<(int row, int col)> GetWinLine(int[,] board, int row, int col, int player)
     {
         int n = board.GetLength(0);
         foreach (var (dr, dc) in Dirs)
         {
-            var line = new List<(int, int)> { (row, col) };
-            for (int i = 1; i <= 4; i++) { int nr = row + dr * i, nc = col + dc * i; if (nr < 0 || nr >= n || nc < 0 || nc >= n || board[nr, nc] != player) break; line.Add((nr, nc)); }
-            for (int i = 1; i <= 4; i++) { int nr = row - dr * i, nc = col - dc * i; if (nr < 0 || nr >= n || nc < 0 || nc >= n || board[nr, nc] != player) break; line.Add((nr, nc)); }
+            var line = new List<(int row, int col)> { (row, col) };
+
+            for (int i = 1; i <= 4; i++)
+            {
+                int nr = row + dr * i, nc = col + dc * i;
+                if (nr < 0 || nr >= n || nc < 0 || nc >= n || board[nr, nc] != player) break;
+                line.Add((nr, nc));
+            }
+            for (int i = 1; i <= 4; i++)
+            {
+                int nr = row - dr * i, nc = col - dc * i;
+                if (nr < 0 || nr >= n || nc < 0 || nc >= n || board[nr, nc] != player) break;
+                line.Add((nr, nc));
+            }
+
             if (line.Count >= 5) return line;
         }
         return null;

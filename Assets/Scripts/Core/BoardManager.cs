@@ -56,7 +56,8 @@ public class BoardManager : MonoBehaviour
     }
 
     public bool CheckWin(int r, int c, int p) => WinChecker.CheckWin(Board, r, c, p);
-    public List<(int, int)> GetWinLine(int r, int c, int p) => WinChecker.GetWinLine(Board, r, c, p);
+    public List<(int row, int col)> GetWinLine(int r, int c, int p)
+    => WinChecker.GetWinLine(Board, r, c, p);
     public bool IsFull() => WinChecker.IsBoardFull(Board);
 
     public int[,] GetCopy()
