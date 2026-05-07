@@ -126,8 +126,8 @@ public class MainMenuUI : MonoBehaviour
         return _selectPanel;
     }
 
-    public void OpenAIFlow()
+    public void GoToGameMode()
     {
-        ShowOnly(_difficultyPanel);
+        ShowOnly(_gameModePanel);
     }
 }

@@ -30,25 +30,30 @@ public class EffectManager : MonoBehaviour
 
     private IEnumerator AnimateWin(List<(int row, int col)> cells, Player winner)
     {
-        // ── 중앙 위치 ────────────────────────────
-        var mid = cells[cells.Count / 2];
-        var midPos = _stone.GridToWorld(mid.row, mid.col) + Vector3.up * 0.15f;
+        // 1. 시작점과 끝점 좌표 가져오기
+        Vector3 firstPos = _stone.GridToWorld(cells[0].row, cells[0].col);
+        Vector3 lastPos = _stone.GridToWorld(cells[cells.Count - 1].row, cells[cells.Count - 1].col);
 
-        // ── 방향 계산 ────────────────────────────
-        var first = _stone.GridToWorld(cells[0].row, cells[0].col);
-        var last = _stone.GridToWorld(cells[cells.Count - 1].row, cells[cells.Count - 1].col);
-        var dir = (last - first).normalized;
+        // 2. 중심점 계산 (Y축 살짝 올림)
+        Vector3 midPos = Vector3.Lerp(firstPos, lastPos, 0.5f) + Vector3.up * 0.15f;
 
-        float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-        var rot = Quaternion.Euler(0f, angle, 0f);
+        // 3. 방향 벡터 계산
+        Vector3 dir = (lastPos - firstPos).normalized;
 
-        // ── 흑백 프리팹 선택 후 생성 ─────────────
+        // 4. 회전값 계산 (LookRotation 사용)
+        // dir 방향을 앞(Forward)으로 보고, 위쪽을 Vector3.up으로 설정
+        Quaternion rot = Quaternion.LookRotation(dir);
+
+        // 5. 프리팹 생성
         var prefab = winner == Player.Black ? _winBlackPrefab : _winWhitePrefab;
 
         if (prefab != null)
         {
             var ps = Instantiate(prefab, midPos, rot, transform);
+            // 생성 시 rot을 넣었으므로 추가적인 rotation 대입은 필요 없으나, 확실히 하기 위해:
+            ps.transform.forward = dir;
             ps.Play();
+
             _winParticles.Add(ps);
         }
 

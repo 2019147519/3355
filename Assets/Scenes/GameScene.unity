@@ -9328,11 +9328,9 @@ MonoBehaviour:
   _rematchView: {fileID: 972525519}
   _rematchYesBtn: {fileID: 478406992}
   _rematchNoBtn: {fileID: 1540654751}
-  _rematchStatusText: {fileID: 152164080}
   _postGameView: {fileID: 62419396}
   _mainMenuBtn: {fileID: 1803284413}
   _startGameBtn: {fileID: 616946891}
-  _startGameBtnText: {fileID: 0}
   _cg: {fileID: 1725591966}
   _maxAlpha: 0.7
 --- !u!225 &1725591966
