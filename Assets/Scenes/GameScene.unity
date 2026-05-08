@@ -184,7 +184,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &62419397
 RectTransform:
   m_ObjectHideFlags: 0
@@ -739,7 +739,7 @@ MonoBehaviour:
   _sfxSource: {fileID: 125079889}
   _menuBGM: {fileID: 8300000, guid: fa6ad475ca5ff144383307b5afb4577a, type: 3}
   _gameBGM: {fileID: 8300000, guid: fa6ad475ca5ff144383307b5afb4577a, type: 3}
-  _stoneSFX: {fileID: 0}
+  _stoneSFX: {fileID: 8300000, guid: 2417b4a87459555438612218c8c58d6a, type: 3}
   _winSFX: {fileID: 0}
   _loseSFX: {fileID: 0}
   _forbiddenSFX: {fileID: 0}
