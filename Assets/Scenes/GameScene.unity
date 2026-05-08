@@ -740,9 +740,9 @@ MonoBehaviour:
   _menuBGM: {fileID: 8300000, guid: fa6ad475ca5ff144383307b5afb4577a, type: 3}
   _gameBGM: {fileID: 8300000, guid: fa6ad475ca5ff144383307b5afb4577a, type: 3}
   _stoneSFX: {fileID: 8300000, guid: 2417b4a87459555438612218c8c58d6a, type: 3}
-  _winSFX: {fileID: 0}
+  _winSFX: {fileID: 8300000, guid: b10fd381bf69a8e49860db56008e7b14, type: 3}
   _loseSFX: {fileID: 0}
-  _forbiddenSFX: {fileID: 0}
+  _forbiddenSFX: {fileID: 8300000, guid: b5e989939299eeb4aa16049d42551a08, type: 3}
   _buttonSFX: {fileID: 8300000, guid: f188b33e86726104cb3880c22c2d6422, type: 3}
 --- !u!82 &125079889
 AudioSource:
