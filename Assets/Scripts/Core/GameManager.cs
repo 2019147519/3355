@@ -84,7 +84,8 @@ public class GameManager : MonoBehaviour
 
         if (_board.CheckWin(row, col, player))
         {
-            _effect.ShowWinLine(_board.GetWinLine(row, col, player));
+            var line = _board.GetWinLine(row, col, player);
+            _effect.ShowWinLine(line, _turn.Current); // ★ winner 추가
             EndGame(_turn.Current);
             return;
         }

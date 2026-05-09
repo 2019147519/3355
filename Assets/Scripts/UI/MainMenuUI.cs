@@ -125,4 +125,9 @@ public class MainMenuUI : MonoBehaviour
         if (_colorSelectPanel.activeSelf) return _colorSelectPanel;
         return _selectPanel;
     }
+
+    public void GoToGameMode()
+    {
+        ShowOnly(_gameModePanel);
+    }
 }
