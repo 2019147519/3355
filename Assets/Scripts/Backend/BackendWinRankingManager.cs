@@ -71,7 +71,6 @@ public class BackendWinRankingManager : MonoBehaviour
         _cachedScore = nextScore;
         _cachedWins = nextWins;
         _cachedLosses = nextLosses;
-        Debug.Log($"[BackendWinRankingManager] Ranking updated. score={nextScore}, wins={nextWins}, losses={nextLosses}");
     }
 
     private bool EnsureRankingRow()
