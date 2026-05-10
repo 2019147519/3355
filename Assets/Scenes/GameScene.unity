@@ -11199,8 +11199,9 @@ GameObject:
   - component: {fileID: 2089401842}
   - component: {fileID: 2089401844}
   - component: {fileID: 2089401843}
+  - component: {fileID: 2089401845}
   m_Layer: 0
-  m_Name: Text (TMP)
+  m_Name: NicknameText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11325,6 +11326,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2089401841}
   m_CullTransparentMesh: 1
+--- !u!114 &2089401845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089401841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02a80e5be95e2d84f81628b154d4a624, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NicknameDisplayUI
+  _guestName: Guest
 --- !u!1 &2109971383
 GameObject:
   m_ObjectHideFlags: 0

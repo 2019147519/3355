@@ -99,6 +99,11 @@ public class GameManager : MonoBehaviour
     public void RequestUndo()
     {
         if (_state != GameState.Playing) return;
+        if (CurrentMode == GameMode.Multi)
+        {
+            ToastUI.Show("온라인 대국에서는 무르기를 사용할 수 없습니다.");
+            return;
+        }
 
         if (CurrentMode == GameMode.AI)
         {

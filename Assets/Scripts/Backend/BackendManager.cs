@@ -1,32 +1,155 @@
-using UnityEngine;
-
-// 뒤끝 SDK namespace 추가
+using System;
 using BackEnd;
+using UnityEngine;
 
 public class BackendManager : MonoBehaviour
 {
-    void Start()
+    public static BackendManager Instance { get; private set; }
+
+    public bool IsInitialized { get; private set; }
+    public bool IsLoggedIn { get; private set; }
+    public string CurrentNickname { get; private set; }
+
+    public event Action<string> OnStatus;
+    public event Action OnLoginSucceeded;
+
+    private void Awake()
     {
-        var bro = Backend.Initialize(); // 뒤끝 초기화
-
-        // 뒤끝 초기화에 대한 응답값
-        if (bro.IsSuccess())
-        {
-            Debug.Log("초기화 성공 : " + bro); // 성공일 경우 statusCode 204 Success
-        }
-        else
-        {
-            Debug.LogError("초기화 실패 : " + bro); // 실패일 경우 statusCode 400대 에러 발생
-        }
-
-        Test();
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        Initialize();
+        EnsureOnlineMatchManager();
+        EnsureWinRankingManager();
     }
 
-    void Test()
+    private void Update()
     {
-        BackendLogin.Instance.CustomLogin("user1", "1234"); // [추가] 뒤끝 로그인
+        if (IsInitialized)
+            Backend.Match.Poll();
+    }
 
-        BackendLogin.Instance.UpdateNickname("원하는 이름"); // [추가] 닉네임 변겅
-        Debug.Log("테스트를 종료합니다.");
+    public bool Initialize()
+    {
+        if (IsInitialized) return true;
+
+        var bro = Backend.Initialize();
+        IsInitialized = bro.IsSuccess();
+
+        Report(IsInitialized ? "Backend initialized." : $"Backend initialization failed: {bro}");
+        return IsInitialized;
+    }
+
+    public void Login(string id, string password)
+    {
+        if (!ValidateCredentials(id, password)) return;
+        if (!Initialize()) return;
+
+        var trimmedId = id.Trim();
+        var bro = Backend.BMember.CustomLogin(trimmedId, password);
+        if (!bro.IsSuccess())
+        {
+            Report($"Login failed: {bro.GetMessage()}");
+            return;
+        }
+
+        CompleteLoginWithoutNicknameUpdate(trimmedId);
+    }
+
+    public void SignUp(string id, string password, string passwordConfirm, string nickname)
+    {
+        if (!ValidateCredentials(id, password)) return;
+        if (password != passwordConfirm)
+        {
+            Report("Password confirmation does not match.");
+            return;
+        }
+        if (!Initialize()) return;
+
+        var trimmedId = id.Trim();
+        var bro = Backend.BMember.CustomSignUp(trimmedId, password);
+        if (!bro.IsSuccess())
+        {
+            Report($"Sign-up failed: {bro.GetMessage()}");
+            return;
+        }
+
+        CompleteSignUp(string.IsNullOrWhiteSpace(nickname) ? trimmedId : nickname.Trim());
+    }
+
+    private bool ValidateCredentials(string id, string password)
+    {
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(password))
+        {
+            Report("Enter both ID and password.");
+            return false;
+        }
+        return true;
+    }
+
+    private void CompleteSignUp(string nickname)
+    {
+        var nickBro = Backend.BMember.UpdateNickname(nickname);
+        if (!nickBro.IsSuccess())
+        {
+            Report($"Nickname setup failed: {nickBro.GetMessage()}");
+            return;
+        }
+
+        CompleteLoginState(nickname);
+    }
+
+    private void CompleteLoginWithoutNicknameUpdate(string fallbackName)
+    {
+        string nickname = Backend.UserNickName;
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = ReadNicknameFromServer();
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = fallbackName;
+
+        CompleteLoginState(nickname);
+    }
+
+    private string ReadNicknameFromServer()
+    {
+        var bro = Backend.BMember.GetUserInfo();
+        if (!bro.IsSuccess())
+            return string.Empty;
+
+        var row = bro.GetReturnValuetoJSON()["row"];
+        if (row == null || !row.ContainsKey("nickname") || row["nickname"] == null)
+            return string.Empty;
+
+        return row["nickname"].ToString();
+    }
+
+    private void CompleteLoginState(string nickname)
+    {
+        IsLoggedIn = true;
+        CurrentNickname = nickname;
+        PlayerPrefs.SetString("BackendLastNickname", nickname);
+        PlayerPrefs.Save();
+        Report($"{nickname} logged in.");
+        OnLoginSucceeded?.Invoke();
+    }
+
+    private void Report(string message)
+    {
+        Debug.Log($"[BackendManager] {message}");
+        OnStatus?.Invoke(message);
+    }
+
+    private static void EnsureOnlineMatchManager()
+    {
+        if (OnlineMatchManager.Instance != null) return;
+        var go = new GameObject("OnlineMatchManager");
+        go.AddComponent<OnlineMatchManager>();
+    }
+
+    private static void EnsureWinRankingManager()
+    {
+        if (BackendWinRankingManager.Instance != null) return;
+        var go = new GameObject("BackendWinRankingManager");
+        go.AddComponent<BackendWinRankingManager>();
     }
 }

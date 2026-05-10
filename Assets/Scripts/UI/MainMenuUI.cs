@@ -57,7 +57,19 @@ public class MainMenuUI : MonoBehaviour
 
     // MultiBtn OnClick
     public void OnModeMulti()
-        => ToastUI.Show("멀티플레이는 준비 중입니다.");
+    {
+        if (BackendManager.Instance == null)
+            new GameObject("BackendManager").AddComponent<BackendManager>();
+
+        if (BackendManager.Instance == null || !BackendManager.Instance.IsLoggedIn)
+        {
+            ToastUI.Show("로그인 후 온라인 매칭을 이용할 수 있습니다.");
+            return;
+        }
+
+        _nicknamePanel.SetActive(false);
+        OnlineMatchManager.Instance.StartQuickMatch();
+    }
 
     // GameMode 뒤로가기
     public void OnGameModeBack()

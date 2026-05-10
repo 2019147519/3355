@@ -27,6 +27,9 @@ public class ResultUI : MonoBehaviour
     [SerializeField] private CanvasGroup _cg;
     [SerializeField] private float _maxAlpha = 0.92f;
 
+    private bool _waitingOnlineRematch;
+    private Coroutine _onlineRematchTimeoutCo;
+
     private void Awake()
     {
         _rematchYesBtn.onClick.AddListener(OnRematchYes);
@@ -37,10 +40,41 @@ public class ResultUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    private void OnEnable()
+    {
+        var online = OnlineMatchManager.Instance;
+        if (online == null) return;
+
+        online.OnRematchAccepted += OnOnlineRematchAccepted;
+        online.OnOpponentDeclinedRematch += OnOpponentDeclinedRematch;
+    }
+
+    private void OnDisable()
+    {
+        var online = OnlineMatchManager.Instance;
+        if (online == null) return;
+
+        online.OnRematchAccepted -= OnOnlineRematchAccepted;
+        online.OnOpponentDeclinedRematch -= OnOpponentDeclinedRematch;
+    }
+
     // ── 외부 진입점 ─────────────────────────────
     public void Show(Player winner)
     {
         gameObject.SetActive(true);
+        if (GameManager.Instance.CurrentMode == GameMode.Multi)
+        {
+            OnlineMatchManager.Instance?.SetPendingResult(winner);
+            var online = OnlineMatchManager.Instance;
+            if (online != null && winner != Player.None)
+            {
+                if (winner == online.LocalPlayer)
+                    BackendWinRankingManager.Instance?.ReportOnlineWin();
+                else
+                    BackendWinRankingManager.Instance?.ReportOnlineLoss();
+            }
+        }
+
         AudioManager.Instance?.PlayWin();
 
         _titleText.text = winner switch
@@ -73,6 +107,17 @@ public class ResultUI : MonoBehaviour
     // ── 재대결 ───────────────────────────────────
     private void OnRematchYes()
     {
+        if (GameManager.Instance.CurrentMode == GameMode.Multi)
+        {
+            _waitingOnlineRematch = true;
+            _rematchYesBtn.interactable = false;
+            _rematchNoBtn.interactable = false;
+            ToastUI.Show("상대의 재대결 선택을 기다립니다.");
+            StartOnlineRematchTimeout();
+            OnlineMatchManager.Instance?.SendRematchChoice(true);
+            return;
+        }
+
         gameObject.SetActive(false);
 
         var mode = GameManager.Instance.CurrentMode;
@@ -84,6 +129,66 @@ public class ResultUI : MonoBehaviour
 
     private void OnRematchNo()
     {
+        if (GameManager.Instance.CurrentMode == GameMode.Multi)
+        {
+            StartCoroutine(DeclineOnlineRematchAndTransition());
+            return;
+        }
+
+        StartCoroutine(TransitionToPostGame());
+    }
+
+    private IEnumerator DeclineOnlineRematchAndTransition()
+    {
+        OnlineMatchManager.Instance?.SendRematchChoice(false);
+        yield return new WaitForSeconds(0.25f);
+        OnlineMatchManager.Instance?.FinishOnlineSession();
+        yield return StartCoroutine(TransitionToPostGame());
+    }
+
+    private void OnOnlineRematchAccepted()
+    {
+        StopOnlineRematchTimeout();
+        gameObject.SetActive(false);
+        GameManager.Instance.StartGame(GameMode.Multi);
+    }
+
+    private void OnOpponentDeclinedRematch()
+    {
+        StopOnlineRematchTimeout();
+        if (_waitingOnlineRematch)
+            ToastUI.Show("상대방이 나갔습니다.");
+
+        _waitingOnlineRematch = false;
+        OnlineMatchManager.Instance?.FinishOnlineSession();
+        StopAllCoroutines();
+        StartCoroutine(TransitionToPostGame());
+    }
+
+    private void StartOnlineRematchTimeout()
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        StopOnlineRematchTimeout();
+        _onlineRematchTimeoutCo = StartCoroutine(OnlineRematchTimeout());
+    }
+
+    private void StopOnlineRematchTimeout()
+    {
+        if (_onlineRematchTimeoutCo == null) return;
+        StopCoroutine(_onlineRematchTimeoutCo);
+        _onlineRematchTimeoutCo = null;
+    }
+
+    private IEnumerator OnlineRematchTimeout()
+    {
+        yield return new WaitForSeconds(15f);
+        if (!_waitingOnlineRematch) yield break;
+
+        ToastUI.Show("상대방 응답이 없습니다.");
+        _waitingOnlineRematch = false;
+        OnlineMatchManager.Instance?.FinishOnlineSession();
         StartCoroutine(TransitionToPostGame());
     }
 
@@ -97,6 +202,9 @@ public class ResultUI : MonoBehaviour
     // ── PostGame ─────────────────────────────────
     private void OnMainMenu()
     {
+        if (GameManager.Instance.CurrentMode == GameMode.Multi)
+            OnlineMatchManager.Instance?.FinishOnlineSession();
+
         gameObject.SetActive(false);
         AudioManager.Instance?.PlayMenuBGM();
         UIManager.Instance.ShowMainMenu();
@@ -104,6 +212,9 @@ public class ResultUI : MonoBehaviour
 
     private void OnStartGame()
     {
+        if (GameManager.Instance.CurrentMode == GameMode.Multi)
+            OnlineMatchManager.Instance?.FinishOnlineSession();
+
         // 모든 모드 → 모드 선택으로
         gameObject.SetActive(false);
         AudioManager.Instance?.PlayMenuBGM();
@@ -120,6 +231,8 @@ public class ResultUI : MonoBehaviour
 
         _rematchYesBtn.interactable = true;
         _rematchNoBtn.interactable = true;
+        _waitingOnlineRematch = false;
+        StopOnlineRematchTimeout();
     }
 
     // ── 페이드 ───────────────────────────────────
