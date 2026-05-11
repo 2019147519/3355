@@ -91,16 +91,13 @@ public class RankingPanelUI : MonoBehaviour
         }
 
         var row = rows[0];
-        _myRankRow.Set(
-            ParseInt(row.rank, 0),
-            string.IsNullOrWhiteSpace(row.nickname) ? BackendManager.Instance?.CurrentNickname ?? "-" : row.nickname,
-            ParseInt(row.score, 0));
+        _myRankRow.SetRankAndScore(ParseInt(row.rank, 0), ParseInt(row.score, 0));
     }
 
     private void RefreshMyRankFallback()
     {
         if (_myRankRow == null) return;
-        _myRankRow.Set(0, BackendManager.Instance?.CurrentNickname ?? "-", 0);
+        _myRankRow.SetRankAndScore(0, 0);
     }
 
     private void Clear()
