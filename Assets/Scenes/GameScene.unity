@@ -3425,6 +3425,7 @@ GameObject:
   - component: {fileID: 478406994}
   - component: {fileID: 478406993}
   - component: {fileID: 478406992}
+  - component: {fileID: 478406995}
   m_Layer: 5
   m_Name: RematchYesBtn
   m_TagString: Untagged
@@ -3533,6 +3534,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 478406990}
   m_CullTransparentMesh: 1
+--- !u!114 &478406995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 478406990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6532f14459edfd41a2eea4df98c2bc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
 --- !u!1 &485574575
 GameObject:
   m_ObjectHideFlags: 0
@@ -4156,6 +4169,7 @@ GameObject:
   - component: {fileID: 616946893}
   - component: {fileID: 616946892}
   - component: {fileID: 616946891}
+  - component: {fileID: 616946894}
   m_Layer: 5
   m_Name: StartGameBtn
   m_TagString: Untagged
@@ -4264,6 +4278,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 616946889}
   m_CullTransparentMesh: 1
+--- !u!114 &616946894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616946889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6532f14459edfd41a2eea4df98c2bc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
 --- !u!1 &689754503
 GameObject:
   m_ObjectHideFlags: 0
@@ -8932,6 +8958,7 @@ GameObject:
   - component: {fileID: 1540654753}
   - component: {fileID: 1540654752}
   - component: {fileID: 1540654751}
+  - component: {fileID: 1540654754}
   m_Layer: 5
   m_Name: RematchNoBtn
   m_TagString: Untagged
@@ -9040,6 +9067,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1540654749}
   m_CullTransparentMesh: 1
+--- !u!114 &1540654754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1540654749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6532f14459edfd41a2eea4df98c2bc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
 --- !u!1 &1554777010
 GameObject:
   m_ObjectHideFlags: 0
@@ -11017,6 +11056,7 @@ GameObject:
   - component: {fileID: 1803284415}
   - component: {fileID: 1803284414}
   - component: {fileID: 1803284413}
+  - component: {fileID: 1803284416}
   m_Layer: 5
   m_Name: MainMenuBtn
   m_TagString: Untagged
@@ -11125,6 +11165,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1803284411}
   m_CullTransparentMesh: 1
+--- !u!114 &1803284416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1803284411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6532f14459edfd41a2eea4df98c2bc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
 --- !u!1 &1815579437
 GameObject:
   m_ObjectHideFlags: 0
