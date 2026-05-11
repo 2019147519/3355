@@ -20,6 +20,8 @@ public class OnlineMatchManager : MonoBehaviour
     public bool IsInGameRoom { get; private set; }
     public bool IsApplyingRemoteMove { get; private set; }
     public int CurrentColorSeed { get; private set; }
+    public string BlackNickname => _blackNickname;
+    public string WhiteNickname => _whiteNickname;
 
     public event Action OnRematchAccepted;
     public event Action OnOpponentDeclinedRematch;

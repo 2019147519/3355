@@ -11,6 +11,10 @@ public class GameHUD : MonoBehaviour
     [SerializeField] private GameObject _blackIndicator;
     [SerializeField] private GameObject _whiteIndicator;
 
+    [Header("플레이어 표시")]
+    [SerializeField] private TextMeshProUGUI _blackPlayerText;
+    [SerializeField] private TextMeshProUGUI _whitePlayerText;
+
     [Header("타이머")]
     [SerializeField] private TextMeshProUGUI _timerText;
     [SerializeField] private Image _timerBar;
@@ -38,6 +42,7 @@ public class GameHUD : MonoBehaviour
         gm.OnTurnChanged += OnTurnChanged;
         gm.OnMoveMade += OnMoveMade;
         gm.OnGameOver += OnGameOver;
+        UpdatePlayerNames();
     }
 
     private void OnDisable()
@@ -56,6 +61,8 @@ public class GameHUD : MonoBehaviour
     // ── 이벤트 핸들러 ────────────────────────────
     private void OnTurnChanged(Player p)
     {
+        UpdatePlayerNames();
+
         bool isBlack = p == Player.Black;
         _turnText.text = isBlack ? "● 흑돌 차례" : "○ 백돌 차례";
         _blackIndicator.SetActive(isBlack);
@@ -76,6 +83,74 @@ public class GameHUD : MonoBehaviour
         => _moveText.text = $"{GameManager.Instance.Turn.MoveCount}수";
 
     private void OnGameOver(Player _) => StopTimer();
+
+    private void UpdatePlayerNames()
+    {
+        var gm = GameManager.Instance;
+        if (gm == null) return;
+
+        string blackName;
+        string whiteName;
+
+        switch (gm.CurrentMode)
+        {
+            case GameMode.Multi:
+                blackName = FallbackName(OnlineMatchManager.Instance?.BlackNickname, "흑돌 플레이어");
+                whiteName = FallbackName(OnlineMatchManager.Instance?.WhiteNickname, "백돌 플레이어");
+                break;
+
+            case GameMode.AI:
+                string playerName = GetPlayerNickname();
+                string aiName = GetAIName(gm.AIDifficulty);
+
+                if (gm.AIColor == Player.Black)
+                {
+                    blackName = aiName;
+                    whiteName = playerName;
+                }
+                else
+                {
+                    blackName = playerName;
+                    whiteName = aiName;
+                }
+                break;
+
+            default:
+                blackName = "흑돌";
+                whiteName = "백돌";
+                break;
+        }
+
+        if (_blackPlayerText != null)
+            _blackPlayerText.text = blackName;
+        if (_whitePlayerText != null)
+            _whitePlayerText.text = whiteName;
+    }
+
+    private static string GetPlayerNickname()
+    {
+        string nickname = BackendManager.Instance != null
+            ? BackendManager.Instance.CurrentNickname
+            : null;
+
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = PlayerPrefs.GetString("BackendLastNickname", string.Empty);
+
+        return string.IsNullOrWhiteSpace(nickname) ? "플레이어" : nickname;
+    }
+
+    private static string GetAIName(int difficulty)
+    {
+        return difficulty switch
+        {
+            <= 1 => "초급 인공지능",
+            2 => "중급 인공지능",
+            _ => "고급 인공지능"
+        };
+    }
+
+    private static string FallbackName(string value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     // ── 타이머 ───────────────────────────────────
     private void RestartTimer()

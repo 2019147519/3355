@@ -21,6 +21,8 @@ public class GameManager : MonoBehaviour
     public BoardManager Board => _board;
     public TurnManager Turn => _turn;
     public GameMode CurrentMode { get; private set; }
+    public int AIDifficulty => _aiDiff;
+    public Player AIColor => _aiColor;
 
     public event Action<Player> OnTurnChanged;
     public event Action<Player> OnGameOver;
