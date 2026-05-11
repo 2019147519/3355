@@ -56,7 +56,7 @@ public class OnlineMatchManager : MonoBehaviour
     {
         if (IsMatching)
         {
-            ToastUI.Show("이미 매칭 중입니다.");
+            ShowMatchStatus("이미 매칭 중입니다.");
             return;
         }
 
@@ -72,12 +72,13 @@ public class OnlineMatchManager : MonoBehaviour
         }
 
         IsMatching = true;
+        ShowMatchStatus("이전 연결을 정리하는 중입니다.");
         LeaveMatchConnections();
         yield return new WaitForSeconds(0.5f);
 
         ResetSessionState();
         IsMatching = true;
-        ToastUI.Show("매칭 서버에 접속합니다.");
+        ShowMatchStatus("매칭 서버에 접속합니다.");
 
         try
         {
@@ -86,16 +87,27 @@ public class OnlineMatchManager : MonoBehaviour
                 errorInfo.Category != ErrorCode.Success)
             {
                 IsMatching = false;
-                ToastUI.Show($"매칭 서버 접속 실패: {errorInfo.Reason}");
+                ShowMatchStatus($"매칭 서버 접속 실패: {errorInfo.Reason}", false);
             }
         }
         catch (Exception e)
         {
             IsMatching = false;
             LeaveMatchConnections();
-            ToastUI.Show("이전 연결을 정리하는 중입니다. 잠시 후 다시 시도해 주세요.");
+            ShowMatchStatus("이전 연결을 정리하는 중입니다. 잠시 후 다시 시도해 주세요.", false);
             Debug.LogWarning($"[OnlineMatchManager] JoinMatchMakingServer failed: {e.Message}");
         }
+    }
+
+    public void CancelMatchmaking()
+    {
+        if (!IsMatching) return;
+
+        IsMatching = false;
+        LeaveMatchConnections();
+        ResetSessionState();
+        HideMatchStatus();
+        ToastUI.Show("매칭을 취소했습니다.");
     }
 
     public void SendMove(int row, int col, Player player)
@@ -310,11 +322,11 @@ public class OnlineMatchManager : MonoBehaviour
         if (args.ErrInfo.Category != ErrorCode.Success)
         {
             IsMatching = false;
-            ToastUI.Show($"매칭 서버 인증 실패: {args.ErrInfo.Reason}");
+            ShowMatchStatus($"매칭 서버 인증 실패: {args.ErrInfo.Reason}", false);
             return;
         }
 
-        ToastUI.Show("대기방을 생성합니다.");
+        ShowMatchStatus("대기방을 생성합니다.");
         Backend.Match.CreateMatchRoom();
     }
 
@@ -325,7 +337,7 @@ public class OnlineMatchManager : MonoBehaviour
         if (args.ErrInfo != ErrorCode.Success)
         {
             IsMatching = false;
-            ToastUI.Show($"대기방 생성 실패: {args.Reason}");
+            ShowMatchStatus($"대기방 생성 실패: {args.Reason}", false);
             return;
         }
 
@@ -333,11 +345,11 @@ public class OnlineMatchManager : MonoBehaviour
         if (string.IsNullOrEmpty(inDate))
         {
             IsMatching = false;
-            ToastUI.Show("매치를 찾지 못했습니다.");
+            ShowMatchStatus("매치를 찾지 못했습니다.", false);
             return;
         }
 
-        ToastUI.Show("상대를 찾는 중입니다.");
+        ShowMatchStatus("상대를 찾는 중입니다.");
         Backend.Match.RequestMatchMaking(_matchType, _matchModeType, inDate);
     }
 
@@ -347,19 +359,19 @@ public class OnlineMatchManager : MonoBehaviour
 
         if (args.ErrInfo == ErrorCode.Match_InProgress)
         {
-            ToastUI.Show("매칭 대기 중입니다.");
+            ShowMatchStatus("매칭 대기 중입니다.");
             return;
         }
 
         if (args.ErrInfo != ErrorCode.Success)
         {
             IsMatching = false;
-            ToastUI.Show($"매칭 실패: {args.Reason}");
+            ShowMatchStatus($"매칭 실패: {args.Reason}", false);
             return;
         }
 
         _roomToken = args.RoomInfo.m_inGameRoomToken;
-        ToastUI.Show("상대를 찾았습니다. 게임 서버에 접속합니다.");
+        ShowMatchStatus("상대를 찾았습니다. 게임 서버에 접속합니다.", false);
 
         var endpoint = args.RoomInfo.m_inGameServerEndPoint;
         try
@@ -369,14 +381,14 @@ public class OnlineMatchManager : MonoBehaviour
                 errorInfo.Category != ErrorCode.Success)
             {
                 IsMatching = false;
-                ToastUI.Show($"게임 서버 접속 실패: {errorInfo.Reason}");
+                ShowMatchStatus($"게임 서버 접속 실패: {errorInfo.Reason}", false);
             }
         }
         catch (Exception e)
         {
             IsMatching = false;
             LeaveMatchConnections();
-            ToastUI.Show("게임 서버 접속에 실패했습니다.");
+            ShowMatchStatus("게임 서버 접속에 실패했습니다.", false);
             Debug.LogWarning($"[OnlineMatchManager] JoinGameServer failed: {e.Message}");
         }
     }
@@ -388,7 +400,7 @@ public class OnlineMatchManager : MonoBehaviour
         if (args.ErrInfo.Category != ErrorCode.Success)
         {
             IsMatching = false;
-            ToastUI.Show($"게임 서버 인증 실패: {args.ErrInfo.Reason}");
+            ShowMatchStatus($"게임 서버 인증 실패: {args.ErrInfo.Reason}", false);
             return;
         }
 
@@ -428,6 +440,7 @@ public class OnlineMatchManager : MonoBehaviour
 
         IsMatching = false;
         IsInGameRoom = true;
+        HideMatchStatus();
         _sentResult = false;
         _hasPendingResult = false;
         ResetRematchState();
@@ -600,6 +613,19 @@ public class OnlineMatchManager : MonoBehaviour
         ToastUI.Show(LocalPlayer == Player.Black
             ? $"{prefix}: 흑돌"
             : $"{prefix}: 백돌");
+    }
+
+    private void ShowMatchStatus(string message, bool canCancel = true)
+    {
+        if (OnlineMatchStatusUI.Instance != null)
+            OnlineMatchStatusUI.Instance.Show(message, canCancel);
+        else
+            ToastUI.Show(message);
+    }
+
+    private void HideMatchStatus()
+    {
+        OnlineMatchStatusUI.Instance?.Hide();
     }
 
     private string ResolveMatchCardInDate()

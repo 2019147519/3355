@@ -599,7 +599,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &84535097
@@ -4513,13 +4513,14 @@ GameObject:
   - component: {fileID: 720223940}
   - component: {fileID: 720223942}
   - component: {fileID: 720223941}
+  - component: {fileID: 720223943}
   m_Layer: 5
   m_Name: OnlineMatchPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &720223940
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4581,6 +4582,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 720223939}
   m_CullTransparentMesh: 1
+--- !u!114 &720223943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 720223939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4702c26f66c64e4b9b25d7a766da09b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OnlineMatchStatusUI
+  _panel: {fileID: 720223939}
+  _messageText: {fileID: 1425958162}
+  _cancelButton: {fileID: 76026450}
 --- !u!1 &721623919
 GameObject:
   m_ObjectHideFlags: 0
@@ -6435,7 +6451,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1040228090
@@ -8060,7 +8076,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1406454974
@@ -10389,7 +10405,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1725591961
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12951,7 +12967,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &2035680062
@@ -13530,7 +13546,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5444074760843592207, guid: 062ab31f364ce91468d7745e1258a8dc, type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4292927726
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 8410995643044086813, guid: 062ab31f364ce91468d7745e1258a8dc, type: 3}
       propertyPath: m_fontColor.b
@@ -13562,7 +13578,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8803847616720363981, guid: 062ab31f364ce91468d7745e1258a8dc, type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4292927726
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 9168423259911656232, guid: 062ab31f364ce91468d7745e1258a8dc, type: 3}
       propertyPath: m_Pivot.x
