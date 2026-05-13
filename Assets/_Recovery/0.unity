@@ -808,7 +808,6 @@ MonoBehaviour:
   _turn: {fileID: 1318603349}
   _stone: {fileID: 1318603346}
   _effect: {fileID: 1318603347}
-  _stoneAnimator: {fileID: 1318603348}
   _input: {fileID: 24746306}
   _resultUI: {fileID: 1725591965}
 --- !u!4 &125079884
@@ -7893,14 +7892,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1318603343}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93446b40a41c05c40af611b417bbb084, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoneAnimator
-  _markerMat: {fileID: 2100000, guid: cd5495fbf3626fc419151bdbedae9fea, type: 2}
-  _markerSize: 0.1
-  _markerDelay: 0.3
+  _lastMoveMarkerMat: {fileID: 0}
+  _bounceHeight: 0.15
+  _bounceDuration: 0.3
 --- !u!114 &1318603349
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TurnManager _turn;
     [SerializeField] private StoneController _stone;
     [SerializeField] private EffectManager _effect;
+    [SerializeField] private StoneAnimator _stoneAnimator;
 
     [Header("Input")]
     [SerializeField] private InputHandler _input;
@@ -49,6 +50,7 @@ public class GameManager : MonoBehaviour
         _turn.Reset();
         _stone.ClearAll();
         _effect.ClearWinLine();
+        _stoneAnimator.ClearMarker();
         _state = GameState.Playing;
 
         _board.OnForbiddenMove -= OnForbiddenMove;
@@ -79,9 +81,12 @@ public class GameManager : MonoBehaviour
         int player = (int)_turn.Current;
         if (!_board.TryPlace(row, col, player)) return;
 
+        // ★ 마지막 착수 위치 마커 갱신
+        var worldPos = _stone.GridToWorld(row, col);
+        _stoneAnimator.MarkLastMove(worldPos);
+
         OnMoveMade?.Invoke(row, col, player);
-        _mode.OnStonePlace(row, col, _turn.Current);
-        
+
         AudioManager.Instance?.PlayStone();
 
         if (_board.CheckWin(row, col, player))
