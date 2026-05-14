@@ -36,6 +36,10 @@ public class BackendManager : MonoBehaviour
         var bro = Backend.Initialize();
         IsInitialized = bro.IsSuccess();
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+    Debug.Log("[BackendManager] GoogleHash: " + Backend.Utils.GetGoogleHash());
+#endif
+
         Report(IsInitialized ? "Backend initialized." : $"Backend initialization failed: {bro}");
         return IsInitialized;
     }
