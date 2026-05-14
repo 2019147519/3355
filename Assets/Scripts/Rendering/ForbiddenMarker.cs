@@ -34,16 +34,22 @@ public class ForbiddenMarker : MonoBehaviour
 
     private void CreateBar(Vector3 pos, float angle)
     {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.transform.position = pos;
-        go.transform.localScale = new Vector3(0.6f, 0.05f, 0.1f);
-        go.transform.rotation = Quaternion.Euler(0f, angle, 0f);
-
-        var col = go.GetComponent<Collider>();
-        if (col) Destroy(col);
+        var go = new GameObject("ForbiddenMarkerBar");
+        var line = go.AddComponent<LineRenderer>();
 
         if (_markerMat != null)
-            go.GetComponent<Renderer>().material = _markerMat;
+            line.material = _markerMat;
+
+        line.positionCount = 2;
+        line.startWidth = 0.08f;
+        line.endWidth = 0.08f;
+        line.useWorldSpace = true;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+        var direction = Quaternion.Euler(0f, angle, 0f) * Vector3.right;
+        float halfLength = 0.3f;
+        line.SetPosition(0, pos - direction * halfLength);
+        line.SetPosition(1, pos + direction * halfLength);
 
         _markers.Add(go);
 

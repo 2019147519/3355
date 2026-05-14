@@ -4,12 +4,16 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [Header("Position Presets")]
-    [SerializeField] private Vector3 _defaultPosition = new(0f, 14f, -6f);
-    [SerializeField] private Vector3 _defaultRotation = new(62f, 0f, 0f);
+    [SerializeField] private Vector3 _portraitPosition = new(0f, 18f, -12f);
+    [SerializeField] private Vector3 _portraitRotation = new(58f, 0f, 0f);
+    [SerializeField] private float _portraitFOV = 42f;
+    [SerializeField] private Vector3 _landscapePosition = new(0f, 16f, -10f);
+    [SerializeField] private Vector3 _landscapeRotation = new(60f, 0f, 0f);
+    [SerializeField] private float _landscapeFOV = 36f;
 
     [Header("Pinch Zoom")]
     [SerializeField] private float _minFOV = 30f;
-    [SerializeField] private float _maxFOV = 70f;
+    [SerializeField] private float _maxFOV = 80f;
     [SerializeField] private float _zoomSpeed = 0.08f;
 
     [Header("Pan")]
@@ -20,6 +24,8 @@ public class CameraController : MonoBehaviour
     private float _prevPinchDist;
     private bool _isPinching;
     private Vector2 _lastPanPos;
+    private int _lastScreenWidth;
+    private int _lastScreenHeight;
 
     private void Awake()
     {
@@ -29,15 +35,26 @@ public class CameraController : MonoBehaviour
 
     public void ResetCamera()
     {
-        transform.position = _defaultPosition;
-        transform.eulerAngles = _defaultRotation;
-        _cam.fieldOfView = 20f;
+        bool portrait = Screen.height >= Screen.width;
+        transform.position = portrait ? _portraitPosition : _landscapePosition;
+        transform.eulerAngles = portrait ? _portraitRotation : _landscapeRotation;
+        _cam.fieldOfView = portrait ? _portraitFOV : _landscapeFOV;
+        CacheScreenSize();
     }
 
     private void Update()
     {
+        if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
+            ResetCamera();
+
         HandlePinchZoom();
         HandlePan();
+    }
+
+    private void CacheScreenSize()
+    {
+        _lastScreenWidth = Screen.width;
+        _lastScreenHeight = Screen.height;
     }
 
     // 式式 б纂 邀 式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式

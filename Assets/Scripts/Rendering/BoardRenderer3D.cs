@@ -9,7 +9,7 @@ public class BoardRenderer3D : MonoBehaviour
     [SerializeField] private float _boardThickness = 0.15f;
     [SerializeField] private float _cellSize = 1f;
 
-    [Header("Star Points (È­Á¡)")]
+    [Header("Star Points (È­ï¿½ï¿½)")]
     [SerializeField] private Material _starPointMaterial;
     [SerializeField] private float _starPointRadius = 0.08f;
 
@@ -29,11 +29,10 @@ public class BoardRenderer3D : MonoBehaviour
         BuildStarPoints();
     }
 
-    // ¦¡¦¡ ¹Ù´Ú ÆÇ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ù´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void BuildBoardSurface()
     {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = "BoardSurface";
+        var go = new GameObject("BoardSurface");
         go.transform.SetParent(_boardRoot.transform);
 
         float boardWorldSize = (Size - 1) * _cellSize;
@@ -44,14 +43,18 @@ public class BoardRenderer3D : MonoBehaviour
         );
         go.transform.localPosition = new Vector3(0f, -_boardThickness * 0.5f, 0f);
 
-        if (_boardMaterial != null)
-            go.GetComponent<Renderer>().material = _boardMaterial;
+        var meshFilter = go.AddComponent<MeshFilter>();
+        meshFilter.mesh = CreateBoxMesh();
 
-        // º¸µå ·¹ÀÌ¾î ¼³Á¤ (InputHandler ·¹ÀÌÄ³½ºÆ®¿ë)
+        var meshRenderer = go.AddComponent<MeshRenderer>();
+        if (_boardMaterial != null)
+            meshRenderer.material = _boardMaterial;
+
+        go.AddComponent<BoxCollider>();
         go.layer = LayerMask.NameToLayer("Board");
     }
 
-    // ¦¡¦¡ °ÝÀÚ¼± ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void BuildGridLines()
     {
         var lineRoot = new GameObject("GridLines");
@@ -63,13 +66,13 @@ public class BoardRenderer3D : MonoBehaviour
         {
             float pos = i * _cellSize - halfSpan;
 
-            // °¡·Î¼±
+            // ï¿½ï¿½ï¿½Î¼ï¿½
             CreateLine(lineRoot,
                 new Vector3(-halfSpan, 0.001f, pos),
                 new Vector3(halfSpan, 0.001f, pos),
                 $"HLine_{i}");
 
-            // ¼¼·Î¼±
+            // ï¿½ï¿½ï¿½Î¼ï¿½
             CreateLine(lineRoot,
                 new Vector3(pos, 0.001f, -halfSpan),
                 new Vector3(pos, 0.001f, halfSpan),
@@ -93,10 +96,10 @@ public class BoardRenderer3D : MonoBehaviour
         lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
-    // ¦¡¦¡ È­Á¡ (Ãµ¿ø¡¤¼º¡¤±Í¸ñ) ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ (Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void BuildStarPoints()
     {
-        // Ç¥ÁØ ¿À¸ñ È­Á¡ ÁÂÇ¥ (0-indexed)
+        // Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ ï¿½ï¿½Ç¥ (0-indexed)
         int[] pts = { 3, 7, 11 };
         var starRoot = new GameObject("StarPoints");
         starRoot.transform.SetParent(_boardRoot.transform);
@@ -116,16 +119,98 @@ public class BoardRenderer3D : MonoBehaviour
 
     private void CreateStarPoint(GameObject parent, Vector3 pos, string name)
     {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        var go = new GameObject(name);
         go.name = name;
         go.transform.SetParent(parent.transform);
         go.transform.localPosition = pos;
-        go.transform.localScale = new Vector3(
-            _starPointRadius * 2f, 0.002f, _starPointRadius * 2f
-        );
-        Destroy(go.GetComponent<Collider>());
 
+        var meshFilter = go.AddComponent<MeshFilter>();
+        meshFilter.mesh = CreateDiskMesh(_starPointRadius, 24);
+
+        var meshRenderer = go.AddComponent<MeshRenderer>();
         if (_starPointMaterial != null)
-            go.GetComponent<Renderer>().material = _starPointMaterial;
+            meshRenderer.material = _starPointMaterial;
+    }
+
+    private static Mesh CreateDiskMesh(float radius, int segments)
+    {
+        int sideVertexCount = segments + 1;
+        var vertices = new Vector3[sideVertexCount * 2];
+        var normals = new Vector3[vertices.Length];
+        var triangles = new int[segments * 6];
+
+        vertices[0] = Vector3.zero;
+        vertices[sideVertexCount] = Vector3.zero;
+        normals[0] = Vector3.up;
+        normals[sideVertexCount] = Vector3.down;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float angle = Mathf.PI * 2f * i / segments;
+            var vertex = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            int top = i + 1;
+            int bottom = sideVertexCount + i + 1;
+
+            vertices[top] = vertex;
+            vertices[bottom] = vertex;
+            normals[top] = Vector3.up;
+            normals[bottom] = Vector3.down;
+        }
+
+        for (int i = 0; i < segments; i++)
+        {
+            int tri = i * 6;
+            int current = i + 1;
+            int next = i == segments - 1 ? 1 : i + 2;
+            int bottomCenter = sideVertexCount;
+            int bottomCurrent = sideVertexCount + current;
+            int bottomNext = sideVertexCount + next;
+
+            triangles[tri] = 0;
+            triangles[tri + 1] = next;
+            triangles[tri + 2] = current;
+
+            triangles[tri + 3] = bottomCenter;
+            triangles[tri + 4] = bottomCurrent;
+            triangles[tri + 5] = bottomNext;
+        }
+
+        var mesh = new Mesh { name = "BoardDiskMesh" };
+        mesh.vertices = vertices;
+        mesh.normals = normals;
+        mesh.triangles = triangles;
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+    private static Mesh CreateBoxMesh()
+    {
+        var vertices = new[]
+        {
+            new Vector3(-0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, 0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, 0.5f)
+        };
+
+        var triangles = new[]
+        {
+            0, 4, 5, 0, 5, 1,
+            1, 5, 6, 1, 6, 2,
+            2, 6, 7, 2, 7, 3,
+            3, 7, 4, 3, 4, 0,
+            4, 7, 6, 4, 6, 5,
+            3, 0, 1, 3, 1, 2
+        };
+
+        var mesh = new Mesh { name = "BoardSurfaceMesh" };
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
     }
 }
