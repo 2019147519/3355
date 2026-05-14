@@ -86,6 +86,7 @@ public class GameManager : MonoBehaviour
         _stoneAnimator.MarkLastMove(worldPos);
 
         OnMoveMade?.Invoke(row, col, player);
+        _mode.OnStonePlace(row, col, _turn.Current);
 
         AudioManager.Instance?.PlayStone();
 

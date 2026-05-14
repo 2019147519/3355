@@ -6,6 +6,9 @@ using TMPro;
 
 public class GameHUD : MonoBehaviour
 {
+    [Header("모바일 화면 영역")]
+    [SerializeField] private bool _applySafeArea = true;
+
     [Header("턴 표시")]
     [SerializeField] private TextMeshProUGUI _turnText;
     [SerializeField] private GameObject _blackIndicator;
@@ -30,9 +33,21 @@ public class GameHUD : MonoBehaviour
     [SerializeField] private Button _pauseBtn;
 
     private Coroutine _timerCo;
+    private RectTransform _rectTransform;
+    private Rect _lastSafeArea;
+    private int _lastScreenWidth;
+    private int _lastScreenHeight;
+
+    private void Awake()
+    {
+        _rectTransform = GetComponent<RectTransform>();
+        ApplySafeAreaIfNeeded(true);
+    }
 
     private void OnEnable()
     {
+        ApplySafeAreaIfNeeded(true);
+
         _undoBtn.onClick.AddListener(OnUndo);
         _pauseBtn.onClick.AddListener(OnPause);
 
@@ -56,6 +71,11 @@ public class GameHUD : MonoBehaviour
         gm.OnTurnChanged -= OnTurnChanged;
         gm.OnMoveMade -= OnMoveMade;
         gm.OnGameOver -= OnGameOver;
+    }
+
+    private void LateUpdate()
+    {
+        ApplySafeAreaIfNeeded(false);
     }
 
     // ── 이벤트 핸들러 ────────────────────────────
@@ -151,6 +171,35 @@ public class GameHUD : MonoBehaviour
 
     private static string FallbackName(string value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private void ApplySafeAreaIfNeeded(bool force)
+    {
+        if (!_applySafeArea || _rectTransform == null || Screen.width <= 0 || Screen.height <= 0)
+            return;
+
+        Rect safeArea = Screen.safeArea;
+        if (!force &&
+            safeArea == _lastSafeArea &&
+            Screen.width == _lastScreenWidth &&
+            Screen.height == _lastScreenHeight)
+            return;
+
+        _lastSafeArea = safeArea;
+        _lastScreenWidth = Screen.width;
+        _lastScreenHeight = Screen.height;
+
+        Vector2 anchorMin = safeArea.position;
+        Vector2 anchorMax = safeArea.position + safeArea.size;
+        anchorMin.x /= Screen.width;
+        anchorMin.y /= Screen.height;
+        anchorMax.x /= Screen.width;
+        anchorMax.y /= Screen.height;
+
+        _rectTransform.anchorMin = anchorMin;
+        _rectTransform.anchorMax = anchorMax;
+        _rectTransform.offsetMin = Vector2.zero;
+        _rectTransform.offsetMax = Vector2.zero;
+    }
 
     // ── 타이머 ───────────────────────────────────
     private void RestartTimer()

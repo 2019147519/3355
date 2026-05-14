@@ -1,4 +1,5 @@
-// Assets/Scripts/Rendering/BoardRenderer3D.cs
+﻿// Assets/Scripts/Rendering/BoardRenderer3D.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BoardRenderer3D : MonoBehaviour
@@ -8,10 +9,13 @@ public class BoardRenderer3D : MonoBehaviour
     [SerializeField] private Material _lineMaterial;
     [SerializeField] private float _boardThickness = 0.15f;
     [SerializeField] private float _cellSize = 1f;
+    [SerializeField] private float _lineHeight = 0.04f;
+    [SerializeField] private float _lineWidth = 0.025f;
 
     [Header("Star Points (ȭ��)")]
     [SerializeField] private Material _starPointMaterial;
     [SerializeField] private float _starPointRadius = 0.08f;
+    [SerializeField] private float _starPointHeight = 0.03f;
 
     private const int Size = BoardManager.Size; // 15
     private GameObject _boardRoot;
@@ -57,43 +61,30 @@ public class BoardRenderer3D : MonoBehaviour
     // ���� ���ڼ� ����������������������������������������������������������������������
     private void BuildGridLines()
     {
-        var lineRoot = new GameObject("GridLines");
-        lineRoot.transform.SetParent(_boardRoot.transform);
-
         float halfSpan = (Size - 1) * _cellSize * 0.5f;
+        var go = new GameObject("GridLines");
+        go.transform.SetParent(_boardRoot.transform);
 
-        for (int i = 0; i < Size; i++)
-        {
-            float pos = i * _cellSize - halfSpan;
+        var meshFilter = go.AddComponent<MeshFilter>();
+        meshFilter.mesh = CreateGridMesh(halfSpan, _lineHeight, _lineWidth);
 
-            // ���μ�
-            CreateLine(lineRoot,
-                new Vector3(-halfSpan, 0.001f, pos),
-                new Vector3(halfSpan, 0.001f, pos),
-                $"HLine_{i}");
-
-            // ���μ�
-            CreateLine(lineRoot,
-                new Vector3(pos, 0.001f, -halfSpan),
-                new Vector3(pos, 0.001f, halfSpan),
-                $"VLine_{i}");
-        }
+        var meshRenderer = go.AddComponent<MeshRenderer>();
+        if (_lineMaterial != null)
+            meshRenderer.material = _lineMaterial;
+        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
-
     private void CreateLine(GameObject parent, Vector3 start, Vector3 end, string name)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent.transform);
 
-        var lr = go.AddComponent<LineRenderer>();
-        lr.material = _lineMaterial;
-        lr.startWidth = 0.02f;
-        lr.endWidth = 0.02f;
-        lr.positionCount = 2;
-        lr.SetPosition(0, start);
-        lr.SetPosition(1, end);
-        lr.useWorldSpace = false;
-        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        var meshFilter = go.AddComponent<MeshFilter>();
+        meshFilter.mesh = CreateLineMesh(start, end, _lineWidth);
+
+        var meshRenderer = go.AddComponent<MeshRenderer>();
+        if (_lineMaterial != null)
+            meshRenderer.material = _lineMaterial;
+        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     // ���� ȭ�� (õ���������͸�) ����������������������������������������
@@ -110,7 +101,7 @@ public class BoardRenderer3D : MonoBehaviour
                 float halfSpan = (Size - 1) * _cellSize * 0.5f;
                 var pos = new Vector3(
                     c * _cellSize - halfSpan,
-                    0.002f,
+                    _starPointHeight,
                     r * _cellSize - halfSpan
                 );
                 CreateStarPoint(starRoot, pos, $"Star_{r}_{c}");
@@ -130,6 +121,113 @@ public class BoardRenderer3D : MonoBehaviour
         var meshRenderer = go.AddComponent<MeshRenderer>();
         if (_starPointMaterial != null)
             meshRenderer.material = _starPointMaterial;
+    }
+
+    private static Mesh CreateLineMesh(Vector3 start, Vector3 end, float width)
+    {
+        var direction = (end - start).normalized;
+        var side = Vector3.Cross(Vector3.up, direction).normalized * (width * 0.5f);
+
+        var vertices = new[]
+        {
+            start - side,
+            start + side,
+            end + side,
+            end - side
+        };
+
+        var triangles = new[]
+        {
+            0, 2, 1,
+            0, 3, 2
+        };
+
+        var normals = new[]
+        {
+            Vector3.up,
+            Vector3.up,
+            Vector3.up,
+            Vector3.up
+        };
+
+        var mesh = new Mesh { name = "BoardLineMesh" };
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.normals = normals;
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    private static Mesh CreateGridMesh(float halfSpan, float y, float width)
+    {
+        var vertices = new List<Vector3>();
+        var triangles = new List<int>();
+        var normals = new List<Vector3>();
+        float halfWidth = width * 0.5f;
+        float cellSize = (halfSpan * 2f) / (Size - 1);
+        float horizontalYOffset = 0.002f;
+
+        for (int i = 0; i < Size; i++)
+        {
+            float x = i * cellSize - halfSpan;
+            AddTopQuad(
+                vertices,
+                triangles,
+                normals,
+                new Vector3(x - halfWidth, y, -halfSpan - halfWidth),
+                new Vector3(x + halfWidth, y, -halfSpan - halfWidth),
+                new Vector3(x + halfWidth, y, halfSpan + halfWidth),
+                new Vector3(x - halfWidth, y, halfSpan + halfWidth));
+        }
+
+        for (int i = 0; i < Size; i++)
+        {
+            float z = i * cellSize - halfSpan;
+            float horizontalY = y + horizontalYOffset;
+            AddTopQuad(
+                vertices,
+                triangles,
+                normals,
+                new Vector3(-halfSpan - halfWidth, horizontalY, z - halfWidth),
+                new Vector3(halfSpan + halfWidth, horizontalY, z - halfWidth),
+                new Vector3(halfSpan + halfWidth, horizontalY, z + halfWidth),
+                new Vector3(-halfSpan - halfWidth, horizontalY, z + halfWidth));
+        }
+
+        var mesh = new Mesh { name = "BoardGridMesh" };
+        mesh.SetVertices(vertices);
+        mesh.SetTriangles(triangles, 0);
+        mesh.SetNormals(normals);
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    private static void AddTopQuad(
+        List<Vector3> vertices,
+        List<int> triangles,
+        List<Vector3> normals,
+        Vector3 a,
+        Vector3 b,
+        Vector3 c,
+        Vector3 d)
+    {
+        int start = vertices.Count;
+        vertices.Add(a);
+        vertices.Add(b);
+        vertices.Add(c);
+        vertices.Add(d);
+
+        normals.Add(Vector3.up);
+        normals.Add(Vector3.up);
+        normals.Add(Vector3.up);
+        normals.Add(Vector3.up);
+
+        triangles.Add(start);
+        triangles.Add(start + 3);
+        triangles.Add(start + 2);
+        triangles.Add(start);
+        triangles.Add(start + 2);
+        triangles.Add(start + 1);
     }
 
     private static Mesh CreateDiskMesh(float radius, int segments)

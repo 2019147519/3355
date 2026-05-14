@@ -1,19 +1,21 @@
-// Assets/Scripts/Rendering/CameraController.cs
-using UnityEngine;
+嚜簑sing UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [Header("Position Presets")]
-    [SerializeField] private Vector3 _portraitPosition = new(0f, 18f, -12f);
-    [SerializeField] private Vector3 _portraitRotation = new(58f, 0f, 0f);
-    [SerializeField] private float _portraitFOV = 42f;
-    [SerializeField] private Vector3 _landscapePosition = new(0f, 16f, -10f);
-    [SerializeField] private Vector3 _landscapeRotation = new(60f, 0f, 0f);
-    [SerializeField] private float _landscapeFOV = 36f;
+    [Header("Board Framing")]
+    [SerializeField] private Vector3 _defaultPosition = new(0f, 60f, -55f);
+    [SerializeField] private Vector3 _defaultRotation = new(50f, 0f, 0f);
+    [SerializeField] private float _boardHalfSize = 7.6f;
+    [SerializeField] private float _viewPadding = 0f;
+    [SerializeField] private float _minAutoFOV = 20f;
+    [SerializeField] private float _maxAutoFOV = 48f;
+
+    [Header("Touch Camera Control")]
+    [SerializeField] private bool _enableTouchCameraControl = false;
 
     [Header("Pinch Zoom")]
-    [SerializeField] private float _minFOV = 30f;
-    [SerializeField] private float _maxFOV = 80f;
+    [SerializeField] private float _minFOV = 20f;
+    [SerializeField] private float _maxFOV = 70f;
     [SerializeField] private float _zoomSpeed = 0.08f;
 
     [Header("Pan")]
@@ -33,13 +35,9 @@ public class CameraController : MonoBehaviour
         ResetCamera();
     }
 
-    public void ResetCamera()
+    private void Start()
     {
-        bool portrait = Screen.height >= Screen.width;
-        transform.position = portrait ? _portraitPosition : _landscapePosition;
-        transform.eulerAngles = portrait ? _portraitRotation : _landscapeRotation;
-        _cam.fieldOfView = portrait ? _portraitFOV : _landscapeFOV;
-        CacheScreenSize();
+        ResetCamera();
     }
 
     private void Update()
@@ -47,8 +45,45 @@ public class CameraController : MonoBehaviour
         if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
             ResetCamera();
 
+        if (!ShouldHandleTouchCameraInput())
+            return;
+
         HandlePinchZoom();
         HandlePan();
+    }
+
+    public void ResetCamera()
+    {
+        transform.position = _defaultPosition;
+        transform.eulerAngles = _defaultRotation;
+        _cam.fieldOfView = CalculateFOVForBoard();
+        CacheScreenSize();
+    }
+
+    private float CalculateFOVForBoard()
+    {
+        float aspect = _cam.aspect > 0f
+            ? _cam.aspect
+            : Screen.width / Mathf.Max(1f, (float)Screen.height);
+        float paddingScale = Mathf.Clamp01(1f - _viewPadding);
+        float requiredTan = 0f;
+
+        for (int ix = -1; ix <= 1; ix += 2)
+        {
+            for (int iz = -1; iz <= 1; iz += 2)
+            {
+                var point = new Vector3(ix * _boardHalfSize, 0f, iz * _boardHalfSize);
+                var local = transform.InverseTransformPoint(point);
+                if (local.z <= 0.01f) continue;
+
+                requiredTan = Mathf.Max(requiredTan, Mathf.Abs(local.y / local.z));
+                requiredTan = Mathf.Max(requiredTan, Mathf.Abs(local.x / local.z) / Mathf.Max(0.01f, aspect));
+            }
+        }
+
+        requiredTan /= Mathf.Max(0.01f, paddingScale);
+        float fov = Mathf.Atan(requiredTan) * Mathf.Rad2Deg * 2f;
+        return Mathf.Clamp(fov, _minAutoFOV, _maxAutoFOV);
     }
 
     private void CacheScreenSize()
@@ -57,7 +92,11 @@ public class CameraController : MonoBehaviour
         _lastScreenHeight = Screen.height;
     }
 
-    // 式式 б纂 邀 式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式
+    private bool ShouldHandleTouchCameraInput()
+    {
+        return _enableTouchCameraControl && !Application.isMobilePlatform;
+    }
+
     private void HandlePinchZoom()
     {
         if (Input.touchCount != 2) { _isPinching = false; return; }
@@ -74,7 +113,6 @@ public class CameraController : MonoBehaviour
         _prevPinchDist = dist;
     }
 
-    // 式式 и 槳陛塊 の 式式式式式式式式式式式式式式式式式式式式式式式式式式式式式
     private void HandlePan()
     {
         if (Input.touchCount != 1) return;
@@ -95,7 +133,7 @@ public class CameraController : MonoBehaviour
         var next = transform.position + move;
 
         next.x = Mathf.Clamp(next.x, -_panLimit, _panLimit);
-        next.z = Mathf.Clamp(next.z, -_panLimit, _panLimit);
+        next.z = Mathf.Clamp(next.z, _defaultPosition.z - _panLimit, _defaultPosition.z + _panLimit);
         transform.position = next;
     }
 }
